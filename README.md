@@ -4,6 +4,7 @@ Projeto prático desenvolvido para a disciplina de Engenharia de Software (GCC18
 ## 1. INTEGRANTES
 - Bianca Santos de Assis - 202510351
 - Deividy Aparecido Martins Terra - 202420181
+- Mateus Nogueira dos Santos - 202510346
 
 ## 2. CONTEXTO DO PROBLEMA E SOLUÇÃO
 ### 2.1 Descrição do problema
