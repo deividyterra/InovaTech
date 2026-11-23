@@ -36,7 +36,7 @@ Para utilizar o sistema, é necessário possuir:
 - Computador com acesso à internet;
 - Navegador web atualizado;
 - PostgreSQL 18.6 instalado;
-- Java JDK 27 instalado;
+- Java JDK 25 instalado;
 - Node.js instalado.
 
 ### 3.2 Download do projeto
@@ -105,7 +105,7 @@ Esta seção apresenta as instruções necessárias para configurar o ambiente d
 Antes de iniciar o desenvolvimento, é necessário instalar:
 
 - Git;
-- Java JDK 27;
+- Java JDK 25;
 - Node.js;
 - PostgreSQL 18.6;
 - Visual Studio Code ou outra IDE de preferência.
@@ -246,6 +246,6 @@ A pasta `frontend` contém os componentes relacionados à interface e à intera�
 As tecnologias utilizadas no desenvolvimento do projeto estão organizadas de acordo com suas respectivas finalidades:
 
 - **Frontend:** HTML Living Standard, CSS Living Standard, JavaScript ECMAScript 2026, React 19.3.
-- **Backend:** Java 27, Spring Boot 4.1.2.
+- **Backend:** Java 27, Spring Boot 4.2.0.
 - **Banco de dados:** PostgreSQL 18.6.
 - **Outras:** Visual Studio Code 1.145.3 — utilizado como ambiente de desenvolvimento integrado (IDE) para edição, organização e desenvolvimento do código-fonte.
