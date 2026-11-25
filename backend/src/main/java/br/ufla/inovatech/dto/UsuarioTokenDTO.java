@@ -1,4 +1,4 @@
 package br.ufla.inovatech.dto;
 
-public record UsuarioTokenDTO(String cpf, String email) {
+public record UsuarioTokenDTO(String cpf, String email, String perfil) {
 }

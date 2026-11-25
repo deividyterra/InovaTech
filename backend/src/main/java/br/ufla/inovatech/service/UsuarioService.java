@@ -1,7 +1,7 @@
 package br.ufla.inovatech.service;
 
-import br.ufla.inovatech.dto.AuthRequest;
-import br.ufla.inovatech.dto.RegisterRequest;
+import br.ufla.inovatech.dto.usuario.AuthRequest;
+import br.ufla.inovatech.dto.usuario.RegisterRequest;
 import br.ufla.inovatech.model.Usuario;
 import br.ufla.inovatech.repository.UsuarioRepository;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -34,7 +34,7 @@ public class UsuarioService {
         usuario.setPerfil("GARCOM");
         usuarioRepository.save(usuario);
 
-        return tokenService.gerarToken(usuario.getEmail(), usuario.getCpf());
+        return tokenService.gerarToken(usuario.getEmail(), usuario.getCpf(), usuario.getPerfil());
     }
 
     public String auth(@RequestBody AuthRequest request){
@@ -42,6 +42,23 @@ public class UsuarioService {
         if (usuario == null || !passwordEncoder.matches(request.senha(), usuario.getSenha())) {
             throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Email ou senha inválidos");
         }
-        return tokenService.gerarToken(usuario.getEmail(), usuario.getCpf());
+        return tokenService.gerarToken(usuario.getEmail(), usuario.getCpf(), usuario.getPerfil());
+    }
+
+    public Usuario consultarId(Integer id){
+        return usuarioRepository.findById(id).orElse(null);
+    }
+
+    public boolean deletar(Integer id){
+        Usuario usuario = consultarId(id);
+        if (usuario == null) return false;
+        usuarioRepository.delete(usuario);
+        return true;
+    }
+
+    public HttpStatus validarPermissao(String token){
+        if (!tokenService.isValido(token)) return HttpStatus.UNAUTHORIZED;
+        if (!"ADMINISTRADOR".equals(tokenService.extrairPerfil(token))) return HttpStatus.FORBIDDEN;
+        return HttpStatus.OK;
     }
 }
