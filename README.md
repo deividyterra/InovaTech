@@ -231,10 +231,47 @@ A estrutura geral dos diretórios do projeto será organizada da seguinte forma:
 ```text
 InovaTech/
 ├── backend/
-│   └── inovatech.sql
+│   ├── inovatech.sql
+│   └── src/main/java/br/ufla/inovatech/
+│       ├── controller/
+│       ├── service/          
+│       ├── repository/
+│       ├── model/
+│       └── dto/
 ├── frontend/
-├── README.md
+│   └── src/
+│       ├── main.jsx
+│       ├── assets/
+│       ├── styles/
+│       ├── services/
+│       ├── app/
+│       │   ├── routes/
+│       │   └── providers/
+│       ├── features/
+│       │   ├── auth/
+│       │   ├── usuario/
+│       │   ├── pedido/
+│       │   ├── notificacoes/
+│       │   ├── prato/
+│       │   ├── estoque/
+│       │   ├── caixa/
+│       │   └── estatisticas/
+│       └── shared/
+│           ├── components/
+│           ├── hooks/
+│           ├── utils/
+│           └── constants/
 ├── docs/
+│   ├── padroes_adotados/
+│   ├── requisitos/
+│   └── diagramas/
+│       ├── casos_de_uso/
+│       ├── classes/
+│       ├── pacotes/
+│       ├── sequencia/
+│       └── implantacao/
+│   
+├── README.md
 └── .gitignore
 ```
 
@@ -249,3 +286,72 @@ As tecnologias utilizadas no desenvolvimento do projeto estão organizadas de ac
 - **Backend:** Java 27, Spring Boot 4.2.0.
 - **Banco de dados:** PostgreSQL 18.6.
 - **Outras:** Visual Studio Code 1.145.3 — utilizado como ambiente de desenvolvimento integrado (IDE) para edição, organização e desenvolvimento do código-fonte.
+
+## 6. Padrões de uso do Git 
+
+## 1. Branches
+
+| Branch | Finalidade |
+|--------|------------|
+| `main` | Versão estável do projeto. Só recebe código que já foi integrado e validado na `develop`. |
+| `develop` | Branch de integração. Recebe tudo o que foi feito e está finalizado e pronto para integração. |
+| `feature/<resumo-da-funcionalidade>` | Branch de trabalho. Uma para cada nova funcionalidade, criada a partir da `develop`. |
+
+### Fluxo de trabalho
+
+1. Toda nova funcionalidade começa com uma branch criada a partir da `develop`.
+2. O desenvolvimento acontece nessa branch, com commits pequenos e frequentes.
+3. Com a funcionalidade finalizada, ela é integrada de volta na `develop`.
+4. Depois de integrado e validado na `develop`, o código segue para a `main`.
+
+```
+feature/*  →  develop  →  main
+```
+
+### Exemplo
+
+```bash
+git checkout develop
+git pull origin develop
+git checkout -b feature/tela-de-pedidos
+```
+
+### Regras
+
+- Não fazer commits diretamente na `main`.
+- Evitar commits diretos na `develop`. O trabalho do dia a dia deve ficar nas branches de funcionalidade.
+- Usar nomes curtos e em minúsculas nas branches, com palavras separadas por hífen (ex.: `feature/cadastro-de-usuario`).
+- Manter cada branch focada em uma única funcionalidade.
+
+## 2. Commits
+
+As mensagens de commit seguem a convenção do Angular, no formato:
+
+```
+tipo(escopo): descrição
+```
+
+O **escopo é opcional** e indica a parte do sistema afetada (ex.: `auth`, `pedido`, `prato`). A descrição deve ser curta e objetiva, escrita em letras minúsculas.
+
+### Tipos
+
+| Tipo | Quando usar |
+|------|-------------|
+| `feat` | Novo recurso para a aplicação, algo que não existia antes e que o usuário final irá acessar. |
+| `fix` | Correção de bugs. |
+| `docs` | Alterações em arquivos de documentação. |
+| `style` | Alterações de estilização, formatação etc., sem mudar a lógica. |
+| `refactor` | Refatoração de código, sem mudança de comportamento para o usuário final. |
+| `perf` | Alterações relacionadas à performance. |
+| `test` | Criação ou modificação de testes. |
+| `chore` | Alterações em configuração, build, distribuição, CI ou qualquer outra coisa que não envolva diretamente o código da aplicação. |
+
+### Exemplos
+
+```
+feat(pedido): criar tela de listagem de pedidos
+fix(auth): corrigir redirecionamento após login
+docs: atualizar diagrama de pacotes
+test(pedido): adicionar testes do cadastro de pedido
+chore: atualizar dependências do projeto
+```
