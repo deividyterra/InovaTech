@@ -289,7 +289,7 @@ As tecnologias utilizadas no desenvolvimento do projeto estão organizadas de ac
 
 ## 6. Padrões de uso do Git 
 
-## 1. Branches
+### 1. Branches
 
 | Branch | Finalidade |
 |--------|------------|
@@ -297,7 +297,7 @@ As tecnologias utilizadas no desenvolvimento do projeto estão organizadas de ac
 | `develop` | Branch de integração. Recebe tudo o que foi feito e está finalizado e pronto para integração. |
 | `feature/<resumo-da-funcionalidade>` | Branch de trabalho. Uma para cada nova funcionalidade, criada a partir da `develop`. |
 
-### Fluxo de trabalho
+#### Fluxo de trabalho
 
 1. Toda nova funcionalidade começa com uma branch criada a partir da `develop`.
 2. O desenvolvimento acontece nessa branch, com commits pequenos e frequentes.
@@ -308,7 +308,7 @@ As tecnologias utilizadas no desenvolvimento do projeto estão organizadas de ac
 feature/*  →  develop  →  main
 ```
 
-### Exemplo
+#### Exemplo
 
 ```bash
 git checkout develop
@@ -316,14 +316,14 @@ git pull origin develop
 git checkout -b feature/tela-de-pedidos
 ```
 
-### Regras
+#### Regras
 
 - Não fazer commits diretamente na `main`.
 - Evitar commits diretos na `develop`. O trabalho do dia a dia deve ficar nas branches de funcionalidade.
 - Usar nomes curtos e em minúsculas nas branches, com palavras separadas por hífen (ex.: `feature/cadastro-de-usuario`).
 - Manter cada branch focada em uma única funcionalidade.
 
-## 2. Commits
+### 2. Commits
 
 As mensagens de commit seguem a convenção do Angular, no formato:
 
@@ -333,7 +333,7 @@ tipo(escopo): descrição
 
 O **escopo é opcional** e indica a parte do sistema afetada (ex.: `auth`, `pedido`, `prato`). A descrição deve ser curta e objetiva, escrita em letras minúsculas.
 
-### Tipos
+#### Tipos
 
 | Tipo | Quando usar |
 |------|-------------|
@@ -346,7 +346,7 @@ O **escopo é opcional** e indica a parte do sistema afetada (ex.: `auth`, `pedi
 | `test` | Criação ou modificação de testes. |
 | `chore` | Alterações em configuração, build, distribuição, CI ou qualquer outra coisa que não envolva diretamente o código da aplicação. |
 
-### Exemplos
+#### Exemplos
 
 ```
 feat(pedido): criar tela de listagem de pedidos
