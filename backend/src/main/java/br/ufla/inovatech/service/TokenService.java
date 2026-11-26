@@ -25,10 +25,10 @@ public class TokenService {
     private final Duration expiracao;
 
     public TokenService(
-            @Value("${jwt.secret}") String secret,
+            @Value("${jwt.secret}") String chaveSecreta,
             @Value("${jwt.expiracao-minutos}") long expiracaoMinutos) {
 
-        byte[] bytes = secret.getBytes(StandardCharsets.UTF_8);
+        byte[] bytes = chaveSecreta.getBytes(StandardCharsets.UTF_8);
         if (bytes.length < 32) {
             throw new IllegalStateException("jwt.secret deve ter pelo menos 32 caracteres (256 bits).");
         }
@@ -115,7 +115,7 @@ public class TokenService {
         }
     }
 
-    public boolean isValido(String token) {
+    public boolean tokenValido(String token) {
         try {
             validar(token);
             return true;
