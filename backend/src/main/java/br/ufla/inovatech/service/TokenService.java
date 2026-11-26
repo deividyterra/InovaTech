@@ -19,7 +19,7 @@ public class TokenService {
 
     private static final String ISSUER = "inovatech";
     private static final String CLAIM_CPF = "cpf";
-    private static final String PREFIXO_BEARER = "Bearer ";
+    private static final String CLAIM_PERFIL = "perfil";
 
     private final SecretKey chave;
     private final Duration expiracao;
@@ -37,14 +37,17 @@ public class TokenService {
     }
 
     /**
-     * Gera um token assinado com o e-mail (subject) e o CPF do usuário.
+     * Gera um token assinado com o e-mail (subject), o CPF e o perfil do usuário.
      */
-    public String gerarToken(String email, String cpf) {
+    public String gerarToken(String email, String cpf, String perfil) {
         if (email == null || email.isBlank()) {
             throw new IllegalArgumentException("O e-mail do usuário é obrigatório.");
         }
         if (cpf == null || cpf.isBlank()) {
             throw new IllegalArgumentException("O CPF do usuário é obrigatório.");
+        }
+        if (perfil == null || perfil.isBlank()) {
+            throw new IllegalArgumentException("O perfil do usuário é obrigatório.");
         }
 
         Instant agora = Instant.now();
@@ -53,6 +56,7 @@ public class TokenService {
                 .issuer(ISSUER)
                 .subject(email)
                 .claim(CLAIM_CPF, cpf)
+                .claim(CLAIM_PERFIL, perfil)
                 .issuedAt(Date.from(agora))
                 .expiration(Date.from(agora.plus(expiracao)))
                 .signWith(chave)
@@ -64,12 +68,14 @@ public class TokenService {
 
         String email = claims.getSubject();
         String cpf = claims.get(CLAIM_CPF, String.class);
+        String perfil = claims.get(CLAIM_PERFIL, String.class);
 
-        if (email == null || email.isBlank() || cpf == null || cpf.isBlank()) {
-            throw new TokenInvalidoException("Token não contém e-mail ou CPF válidos.");
+        if (email == null || email.isBlank() || cpf == null || cpf.isBlank()
+                || perfil == null || perfil.isBlank()) {
+            throw new TokenInvalidoException("Token não contém e-mail, CPF ou perfil válidos.");
         }
 
-        return new UsuarioTokenDTO(email, cpf);
+        return new UsuarioTokenDTO(cpf, email, perfil);
     }
 
     /** Atalho para obter só o e-mail do usuário a partir do token. */
@@ -82,14 +88,20 @@ public class TokenService {
         return extrairUsuario(token).cpf();
     }
 
+    /** Atalho para obter só o perfil do usuário a partir do token (ex.: "ADMINISTRADOR"). */
+    public String extrairPerfil(String token) {
+        return extrairUsuario(token).perfil();
+    }
+
     private Claims validar(String token) {
         if (token == null || token.isBlank()) {
             throw new TokenInvalidoException("Token não informado.");
         }
 
-        String jwt = token.startsWith(PREFIXO_BEARER)
-                ? token.substring(PREFIXO_BEARER.length()).trim()
-                : token.trim();
+        String jwt = Sanitizer.token(token);
+        if (jwt == null) {
+            throw new TokenInvalidoException("Token mal formado.");
+        }
 
         try {
             return Jwts.parser()
@@ -100,6 +112,15 @@ public class TokenService {
                     .getPayload();
         } catch (JwtException | IllegalArgumentException e) {
             throw new TokenInvalidoException("Token inválido ou expirado.", e);
+        }
+    }
+
+    public boolean isValido(String token) {
+        try {
+            validar(token);
+            return true;
+        } catch (TokenInvalidoException e) {
+            return false;
         }
     }
 }

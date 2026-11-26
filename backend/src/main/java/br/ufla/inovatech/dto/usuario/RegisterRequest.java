@@ -1,4 +1,4 @@
-package br.ufla.inovatech.dto;
+package br.ufla.inovatech.dto.usuario;
 
 import br.ufla.inovatech.service.Sanitizer;
 import jakarta.validation.constraints.Email;

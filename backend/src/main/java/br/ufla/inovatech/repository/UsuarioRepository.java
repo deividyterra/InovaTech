@@ -3,7 +3,7 @@ package br.ufla.inovatech.repository;
 import br.ufla.inovatech.model.Usuario;
 import org.springframework.data.jpa.repository.JpaRepository;
 
-public interface UsuarioRepository extends JpaRepository<Usuario, Long> {
+public interface UsuarioRepository extends JpaRepository<Usuario, Integer> {
 
     Usuario findByEmail(String email);
 
