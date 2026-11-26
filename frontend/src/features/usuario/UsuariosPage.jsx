@@ -13,20 +13,25 @@ const PERFIS = [
   { value: "admin", label: "Administrador", cor: "red" },
 ];
 
-const BASE = [
-  { nome: "Clara Nunes", email: "clara@oliveiras.com", perfil: "garcom" },
-  { nome: "Beatriz Oliveira", email: "beatriz@oliveiras.com", perfil: "cozinheiro" },
-  { nome: "Rafael Mendes", email: "rafael@oliveiras.com", perfil: "gestor" },
-  { nome: "Lucas Santos", email: "lucas@oliveiras.com", perfil: "caixa" },
-  { nome: "Marina Costa", email: "marina@oliveiras.com", perfil: "admin" },
+const USUARIOS_MOCK = [
+  { id: 1, nome: "Marina Costa", cpf: "555.666.777-88", email: "marina@oliveiras.com", perfil: "admin" },
+  { id: 2, nome: "Rafael Mendes", cpf: "333.444.555-66", email: "rafael@oliveiras.com", perfil: "gestor" },
+  { id: 3, nome: "Beatriz Oliveira", cpf: "222.333.444-55", email: "beatriz@oliveiras.com", perfil: "cozinheiro" },
+  { id: 4, nome: "André Lima", cpf: "666.777.888-99", email: "andre@oliveiras.com", perfil: "cozinheiro" },
+  { id: 5, nome: "Clara Nunes", cpf: "111.222.333-44", email: "clara@oliveiras.com", perfil: "garcom" },
+  { id: 6, nome: "Pedro Alves", cpf: "777.888.999-00", email: "pedro@oliveiras.com", perfil: "garcom" },
+  { id: 7, nome: "Lucas Santos", cpf: "444.555.666-77", email: "lucas@oliveiras.com", perfil: "caixa" },
 ];
 
-const USUARIOS_MOCK = Array.from({ length: 30 }, (_, i) => ({
-  ...BASE[i % 5],
-  id: i + 1,
-}));
-
 const POR_PAGINA = 5;
+
+const FORM_INICIAL = {
+  nome: "",
+  cpf: "",
+  email: "",
+  senha: "",
+  perfil: "garcom",
+};
 
 const MENU = [
   { label: "Pedidos", icon: "pedidos" },
@@ -70,6 +75,24 @@ function Icon({ name }) {
   );
 }
 
+function IconeLapis() {
+  return (
+    <svg
+      className="modal-usuario__lapis"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.8"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden="true"
+    >
+      <path d="M12 20h9" />
+      <path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z" />
+    </svg>
+  );
+}
+
 function mascararCpf(valor) {
   const n = valor.replace(/\D/g, "").slice(0, 11);
   return n
@@ -85,30 +108,39 @@ const perfilInfo = (valor) => PERFIS.find((p) => p.value === valor);
 ======================== */
 
 export default function UsuariosPage() {
-  const [usuarios] = useState(USUARIOS_MOCK);
+  const [usuarios, setUsuarios] = useState(USUARIOS_MOCK);
+  const [abaAtiva, setAbaAtiva] = useState("todos");
   const [busca, setBusca] = useState("");
   const [filtroPerfil, setFiltroPerfil] = useState("todos");
   const [pagina, setPagina] = useState(1);
 
-  const [form, setForm] = useState({
+  // Formulário lateral (Novo usuário)
+  const [form, setForm] = useState(FORM_INICIAL);
+
+  // Modal de feedback de cadastro: null | "sucesso" | "erro"
+  const [modalStatus, setModalStatus] = useState(null);
+
+  // Modal de ação do usuário: null | { modo: "visualizar" | "editar" | "excluir", usuario }
+  const [modalUsuario, setModalUsuario] = useState(null);
+  const [formEdicao, setFormEdicao] = useState({
     nome: "",
     cpf: "",
     email: "",
     senha: "",
-    perfil: "garcom",
   });
 
   const filtrados = useMemo(() => {
     const termo = busca.trim().toLowerCase();
     return usuarios.filter((u) => {
+      const bateAba = abaAtiva === "todos" || u.perfil === "admin";
       const bateBusca =
         !termo ||
         u.nome.toLowerCase().includes(termo) ||
         u.email.toLowerCase().includes(termo);
       const batePerfil = filtroPerfil === "todos" || u.perfil === filtroPerfil;
-      return bateBusca && batePerfil;
+      return bateAba && bateBusca && batePerfil;
     });
-  }, [usuarios, busca, filtroPerfil]);
+  }, [usuarios, abaAtiva, busca, filtroPerfil]);
 
   const totalPaginas = Math.max(1, Math.ceil(filtrados.length / POR_PAGINA));
   const paginaAtual = Math.min(pagina, totalPaginas);
@@ -123,15 +155,333 @@ export default function UsuariosPage() {
     setForm((f) => ({ ...f, [name]: name === "cpf" ? mascararCpf(value) : value }));
   }
 
-  function handleSubmit(e) {
+  function handleEdicaoChange(e) {
+    const { name, value } = e.target;
+    setFormEdicao((f) => ({
+      ...f,
+      [name]: name === "cpf" ? mascararCpf(value) : value,
+    }));
+  }
+
+  function iniciarNovoAdmin() {
+    setForm({ ...FORM_INICIAL, perfil: "admin" });
+  }
+
+  function abrirModalUsuario(modo, usuario) {
+    setFormEdicao({
+      nome: usuario.nome,
+      cpf: usuario.cpf || "",
+      email: usuario.email,
+      senha: "••••••••••••",
+    });
+    setModalUsuario({ modo, usuario });
+  }
+
+  async function handleSubmitNovo(e) {
     e.preventDefault();
-    // TODO: chamar usuario.api.js (criarUsuario)
-    console.log("Criar usuário:", form);
+
+    try {
+      const nomeValido = form.nome.trim().length >= 3;
+      const cpfValido = form.cpf.replace(/\D/g, "").length === 11;
+      const emailNormalizado = form.email.trim().toLowerCase();
+      const emailValido = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(emailNormalizado);
+      const senhaValida = form.senha.length >= 8;
+
+      const jaExiste = usuarios.some(
+        (u) =>
+          u.email.toLowerCase() === emailNormalizado ||
+          (cpfValido && u.cpf === form.cpf)
+      );
+
+      if (!nomeValido || !cpfValido || !emailValido || !senhaValida || jaExiste) {
+        throw new Error("Dados inválidos ou credenciais já utilizadas.");
+      }
+
+      // TODO: trocar por const criado = await criarUsuario(form)
+      const novoUsuario = {
+        id: Date.now(),
+        nome: form.nome.trim(),
+        cpf: form.cpf,
+        email: form.email.trim(),
+        perfil: form.perfil,
+      };
+
+      setUsuarios((lista) => [novoUsuario, ...lista]);
+      setForm(FORM_INICIAL);
+      setPagina(1);
+      setModalStatus("sucesso");
+    } catch {
+      setModalStatus("erro");
+    }
+  }
+
+  async function handleSalvarEdicao(e) {
+    e.preventDefault();
+    if (!modalUsuario) return;
+
+    const { usuario } = modalUsuario;
+    const nomeLimpo = formEdicao.nome.trim();
+    const emailLimpo = formEdicao.email.trim();
+    const cpfLimpo = formEdicao.cpf;
+
+    if (nomeLimpo.length < 3 || cpfLimpo.replace(/\D/g, "").length !== 11 || !emailLimpo) {
+      return;
+    }
+
+    // TODO: trocar por await atualizarUsuario(usuario.id, formEdicao)
+    setUsuarios((lista) =>
+      lista.map((u) =>
+        u.id === usuario.id
+          ? { ...u, nome: nomeLimpo, cpf: cpfLimpo, email: emailLimpo }
+          : u
+      )
+    );
+    setModalUsuario(null);
+  }
+
+  async function handleConfirmarExclusao() {
+    if (!modalUsuario) return;
+    const { usuario } = modalUsuario;
+
+    // TODO: trocar por await excluirUsuario(usuario.id)
+    setUsuarios((lista) => lista.filter((u) => u.id !== usuario.id));
+    setModalUsuario(null);
   }
 
   return (
     <div className="usuarios-layout">
-      {/* ===== SIDEBAR (mover para shared/components/layout depois) ===== */}
+      {/* ===== MODAL DE FEEDBACK DO CADASTRO (SUCESSO / ERRO) ===== */}
+      {modalStatus && (
+        <div
+          className="modal-overlay"
+          role="dialog"
+          aria-modal="true"
+          onClick={() => setModalStatus(null)}
+        >
+          <div
+            className={`modal-feedback modal-feedback--${modalStatus}`}
+            onClick={(e) => e.stopPropagation()}
+          >
+            {modalStatus === "sucesso" ? (
+              <>
+                <div className="modal-feedback__corpo">
+                  <span className="modal-feedback__tag">USUÁRIO CADASTRADO</span>
+                  <h3 className="modal-feedback__titulo">
+                    Novo usuário cadastrado com sucesso!
+                  </h3>
+                  <p className="modal-feedback__descricao">
+                    Informe os tokens de acesso para o novo usuário.
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  className="modal-feedback__rodape"
+                  onClick={() => setModalStatus(null)}
+                >
+                  <span>Voltar para Usuários</span>
+                  <span>→</span>
+                </button>
+              </>
+            ) : (
+              <>
+                <div className="modal-feedback__corpo">
+                  <span className="modal-feedback__tag">OPS...</span>
+                  <h3 className="modal-feedback__titulo">
+                    Erro ao cadastrar novo usuário.
+                  </h3>
+                  <p className="modal-feedback__descricao">
+                    Ocorreu um erro ao tentar registrar um novo usuário. Confira se as
+                    credenciais já não estão sendo utilizadas e tente novamente. Se o
+                    problema persistir, consulte um técnico.
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  className="modal-feedback__rodape"
+                  onClick={() => setModalStatus(null)}
+                >
+                  <span>Voltar para Usuários</span>
+                  <span>→</span>
+                </button>
+              </>
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* ===== MODAL UNIFICADO: VISUALIZAR / EDITAR / EXCLUIR ===== */}
+      {modalUsuario && (
+        <div
+          className="modal-overlay modal-overlay--centro"
+          role="dialog"
+          aria-modal="true"
+          onClick={() => setModalUsuario(null)}
+        >
+          <form
+            className={`modal-usuario modal-usuario--${modalUsuario.modo}`}
+            onClick={(e) => e.stopPropagation()}
+            onSubmit={handleSalvarEdicao}
+            noValidate
+          >
+            <button
+              type="button"
+              className="modal-usuario__fechar"
+              aria-label="Fechar modal"
+              onClick={() => setModalUsuario(null)}
+            >
+              ×
+            </button>
+
+            <h3 className="modal-usuario__titulo">
+              {modalUsuario.modo === "visualizar" && "Dados do Usuário"}
+              {modalUsuario.modo === "editar" && "Editar dados do usuário"}
+              {modalUsuario.modo === "excluir" && "Deseja excluir este usuário?"}
+            </h3>
+
+            <div className="modal-usuario__campos">
+              <label className="campo">
+                <span>Nome completo</span>
+                <div className="modal-usuario__input-wrap">
+                  <input
+                    type="text"
+                    name="nome"
+                    className="input"
+                    value={formEdicao.nome}
+                    onChange={handleEdicaoChange}
+                    readOnly={modalUsuario.modo !== "editar"}
+                  />
+                  {modalUsuario.modo === "editar" && <IconeLapis />}
+                </div>
+              </label>
+
+              <label className="campo">
+                <span>CPF</span>
+                <div className="modal-usuario__input-wrap">
+                  <input
+                    type="text"
+                    name="cpf"
+                    className="input"
+                    value={formEdicao.cpf}
+                    onChange={handleEdicaoChange}
+                    readOnly={modalUsuario.modo !== "editar"}
+                  />
+                  {modalUsuario.modo === "editar" && <IconeLapis />}
+                </div>
+              </label>
+
+              <label className="campo">
+                <span>E-mail</span>
+                <div className="modal-usuario__input-wrap">
+                  <input
+                    type="email"
+                    name="email"
+                    className="input"
+                    value={formEdicao.email}
+                    onChange={handleEdicaoChange}
+                    readOnly={modalUsuario.modo !== "editar"}
+                  />
+                  {modalUsuario.modo === "editar" && <IconeLapis />}
+                </div>
+              </label>
+
+              <label className="campo">
+                <span>Senha</span>
+                <div className="modal-usuario__input-wrap">
+                  <input
+                    type="password"
+                    name="senha"
+                    className="input"
+                    value={formEdicao.senha}
+                    onFocus={() => {
+                      if (modalUsuario.modo === "editar" && formEdicao.senha === "••••••••••••") {
+                        setFormEdicao((f) => ({ ...f, senha: "" }));
+                      }
+                    }}
+                    onChange={handleEdicaoChange}
+                    readOnly={modalUsuario.modo !== "editar"}
+                  />
+                  {modalUsuario.modo === "editar" && <IconeLapis />}
+                </div>
+              </label>
+
+              <label className="campo">
+                <span>Perfil de acesso · não poderá ser alterado</span>
+                <div className="modal-usuario__input-wrap">
+                  <input
+                    type="text"
+                    className="input"
+                    value={perfilInfo(modalUsuario.usuario.perfil)?.label || ""}
+                    readOnly
+                  />
+                </div>
+              </label>
+            </div>
+
+            {/* Botões de rodapé conforme o modo */}
+            {modalUsuario.modo === "visualizar" && (
+              <div className="modal-usuario__acoes">
+                <button
+                  type="button"
+                  className="modal-usuario__btn modal-usuario__btn--verde"
+                  onClick={() =>
+                    setModalUsuario((m) => ({ ...m, modo: "editar" }))
+                  }
+                >
+                  Editar usuário
+                </button>
+                <button
+                  type="button"
+                  className="modal-usuario__btn modal-usuario__btn--vermelho"
+                  onClick={() =>
+                    setModalUsuario((m) => ({ ...m, modo: "excluir" }))
+                  }
+                >
+                  Excluir usuário
+                </button>
+              </div>
+            )}
+
+            {modalUsuario.modo === "editar" && (
+              <div className="modal-usuario__acoes">
+                <button
+                  type="button"
+                  className="modal-usuario__btn modal-usuario__btn--vermelho"
+                  onClick={() => setModalUsuario(null)}
+                >
+                  Cancelar
+                </button>
+                <button
+                  type="submit"
+                  className="modal-usuario__btn modal-usuario__btn--verde"
+                >
+                  Salvar
+                </button>
+              </div>
+            )}
+
+            {modalUsuario.modo === "excluir" && (
+              <div className="modal-usuario__acoes">
+                <button
+                  type="button"
+                  className="modal-usuario__btn modal-usuario__btn--verde"
+                  onClick={() => setModalUsuario(null)}
+                >
+                  Cancelar
+                </button>
+                <button
+                  type="button"
+                  className="modal-usuario__btn modal-usuario__btn--vermelho"
+                  onClick={handleConfirmarExclusao}
+                >
+                  Excluir
+                </button>
+              </div>
+            )}
+          </form>
+        </div>
+      )}
+
+      {/* ===== SIDEBAR ===== */}
       <aside className="sidebar">
         <div className="sidebar__top">
           <div className="sidebar__brand">
@@ -168,7 +518,6 @@ export default function UsuariosPage() {
 
       {/* ===== CONTEÚDO ===== */}
       <div className="usuarios-main">
-        {/* Topbar (mover para Header depois) */}
         <header className="topbar">
           <span className="topbar__breadcrumb">Operação / Usuários</span>
 
@@ -194,14 +543,33 @@ export default function UsuariosPage() {
           {/* Abas */}
           <div className="tabs">
             <div className="tabs__left">
-              <button type="button" className="tab tab--active">
+              <button
+                type="button"
+                className={`tab ${abaAtiva === "todos" ? "tab--active" : ""}`}
+                onClick={() => {
+                  setAbaAtiva("todos");
+                  setPagina(1);
+                }}
+              >
                 Usuários · {usuarios.length}
               </button>
-              <button type="button" className="tab">
+              <button
+                type="button"
+                className={`tab ${abaAtiva === "admins" ? "tab--active" : ""}`}
+                onClick={() => {
+                  setAbaAtiva("admins");
+                  setFiltroPerfil("todos");
+                  setPagina(1);
+                }}
+              >
                 Administradores · {totalAdmins}
               </button>
             </div>
-            <button type="button" className="tab tab--novo">
+            <button
+              type="button"
+              className="tab tab--novo"
+              onClick={iniciarNovoAdmin}
+            >
               Novo administrador
             </button>
           </div>
@@ -236,6 +604,7 @@ export default function UsuariosPage() {
                 <select
                   className="input"
                   value={filtroPerfil}
+                  disabled={abaAtiva === "admins"}
                   onChange={(e) => {
                     setFiltroPerfil(e.target.value);
                     setPagina(1);
@@ -265,19 +634,32 @@ export default function UsuariosPage() {
                     return (
                       <tr key={u.id}>
                         <td>
-                          <strong className="tabela__nome">{u.nome}</strong>
+                          <strong
+                            className="tabela__nome tabela__nome--clicavel"
+                            onClick={() => abrirModalUsuario("visualizar", u)}
+                          >
+                            {u.nome}
+                          </strong>
                           <span className="tabela__email">{u.email}</span>
                         </td>
                         <td>
                           <span className={`badge badge--${p.cor}`}>{p.label}</span>
                         </td>
                         <td>
-                          <button type="button" className="acao acao--editar">
+                          <button
+                            type="button"
+                            className="acao acao--editar"
+                            onClick={() => abrirModalUsuario("editar", u)}
+                          >
                             Editar
                           </button>
                         </td>
                         <td>
-                          <button type="button" className="acao acao--excluir">
+                          <button
+                            type="button"
+                            className="acao acao--excluir"
+                            onClick={() => abrirModalUsuario("excluir", u)}
+                          >
                             Excluir
                           </button>
                         </td>
@@ -300,6 +682,14 @@ export default function UsuariosPage() {
                   Exibindo {visiveis.length} de {filtrados.length} usuários
                 </span>
                 <div className="paginacao__controles">
+                  <button
+                    type="button"
+                    className="paginacao__proxima"
+                    disabled={paginaAtual <= 1}
+                    onClick={() => setPagina(paginaAtual - 1)}
+                  >
+                    ← Anterior
+                  </button>
                   <span>
                     {paginaAtual} / {totalPaginas}
                   </span>
@@ -316,7 +706,7 @@ export default function UsuariosPage() {
             </section>
 
             {/* Formulário */}
-            <form className="card form" onSubmit={handleSubmit}>
+            <form className="card form" onSubmit={handleSubmitNovo} noValidate>
               <h3>Novo usuário</h3>
 
               <label className="campo">
@@ -328,7 +718,6 @@ export default function UsuariosPage() {
                   placeholder="Digite o nome"
                   value={form.nome}
                   onChange={handleChange}
-                  required
                 />
               </label>
 
@@ -341,7 +730,6 @@ export default function UsuariosPage() {
                   placeholder="000.000.000-00"
                   value={form.cpf}
                   onChange={handleChange}
-                  required
                 />
               </label>
 
@@ -354,7 +742,6 @@ export default function UsuariosPage() {
                   placeholder="nome@oliveiras.com"
                   value={form.email}
                   onChange={handleChange}
-                  required
                 />
               </label>
 
@@ -365,10 +752,8 @@ export default function UsuariosPage() {
                   name="senha"
                   className="input"
                   placeholder="••••••••••••"
-                  minLength={8}
                   value={form.senha}
                   onChange={handleChange}
-                  required
                 />
               </label>
 

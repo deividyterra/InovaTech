@@ -518,3 +518,229 @@
     overflow-x: auto;
   }
 }
+
+/* ========================
+   MODAL DE FEEDBACK (CADASTRO)
+======================== */
+
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  background-color: rgba(23, 27, 22, 0.55);
+  display: flex;
+  justify-content: center;
+  align-items: flex-start;
+  padding-top: 24px;
+  z-index: 1000;
+}
+
+.modal-feedback {
+  width: 100%;
+  max-width: 540px;
+  background-color: var(--color-background);
+  border-radius: 16px;
+  overflow: hidden;
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.22);
+  animation: modalDescer 0.2s ease-out;
+}
+
+@keyframes modalDescer {
+  from {
+    opacity: 0;
+    transform: translateY(-12px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.modal-feedback__corpo {
+  padding: 28px 32px 32px;
+}
+
+.modal-feedback__tag {
+  display: block;
+  font-size: var(--font-size-body-infos);
+  font-weight: var(--font-semibold);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  margin-bottom: 10px;
+}
+
+.modal-feedback--sucesso .modal-feedback__tag {
+  color: var(--color-success);
+}
+
+.modal-feedback--erro .modal-feedback__tag {
+  color: var(--color-danger);
+}
+
+.modal-feedback__titulo {
+  font-family: var(--font-heading);
+  font-size: 28px;
+  font-weight: var(--font-semibold);
+  line-height: var(--line-height-heading);
+  color: var(--color-text);
+  margin-bottom: 10px;
+}
+
+.modal-feedback__descricao {
+  font-size: var(--font-size-sm);
+  color: var(--color-text-muted);
+  line-height: var(--line-height-body);
+}
+
+.modal-feedback__rodape {
+  width: 100%;
+  border: none;
+  padding: 18px 32px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: var(--font-size-md);
+  font-weight: var(--font-medium);
+  color: var(--color-title-primary);
+  text-align: left;
+  transition: filter 0.15s ease;
+}
+
+.modal-feedback__rodape:hover {
+  filter: brightness(1.08);
+}
+
+.modal-feedback--sucesso .modal-feedback__rodape {
+  background-color: var(--color-secondary);
+}
+
+.modal-feedback--erro .modal-feedback__rodape {
+  background-color: var(--color-danger);
+}
+
+/* ========================
+   MODAL DE USUÁRIO (VISUALIZAR / EDITAR / EXCLUIR)
+======================== */
+
+.modal-overlay--centro {
+  align-items: center;
+  padding: 16px;
+}
+
+.modal-usuario {
+  position: relative;
+  width: 100%;
+  max-width: 390px;
+  border-radius: 16px;
+  padding: 28px 26px 24px;
+  box-shadow: 0 20px 44px rgba(0, 0, 0, 0.25);
+  animation: modalDescer 0.18s ease-out;
+}
+
+.modal-usuario--visualizar {
+  background-color: var(--color-border-green);
+}
+
+.modal-usuario--editar {
+  background-color: var(--color-border-yellow);
+}
+
+.modal-usuario--excluir {
+  background-color: var(--color-border-red);
+}
+
+.modal-usuario__fechar {
+  position: absolute;
+  top: 14px;
+  right: 16px;
+  border: none;
+  background: none;
+  font-size: 18px;
+  line-height: 1;
+  color: var(--color-text-muted);
+  padding: 4px;
+}
+
+.modal-usuario__fechar:hover {
+  color: var(--color-text);
+}
+
+.modal-usuario__titulo {
+  font-family: var(--font-heading);
+  font-size: 20px;
+  font-weight: var(--font-semibold);
+  color: var(--color-text);
+  text-align: center;
+  margin-bottom: 18px;
+}
+
+.modal-usuario__campos {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.modal-usuario__input-wrap {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.modal-usuario__input-wrap .input {
+  background-color: var(--color-surface);
+  border-color: transparent;
+  padding-right: 32px;
+}
+
+.modal-usuario__input-wrap .input:read-only,
+.modal-usuario__input-wrap .input:disabled {
+  color: var(--color-text-muted);
+  cursor: default;
+}
+
+.modal-usuario__lapis {
+  position: absolute;
+  right: 10px;
+  width: 13px;
+  height: 13px;
+  color: var(--color-text-muted);
+  pointer-events: none;
+}
+
+.modal-usuario__acoes {
+  display: flex;
+  justify-content: center;
+  gap: 12px;
+  margin-top: 20px;
+}
+
+.modal-usuario__btn {
+  min-width: 124px;
+  padding: 10px 16px;
+  border: none;
+  border-radius: 8px;
+  font-size: var(--font-size-xs);
+  font-weight: var(--font-medium);
+  color: var(--color-title-primary);
+  transition: filter 0.15s ease;
+}
+
+.modal-usuario__btn:hover {
+  filter: brightness(1.08);
+}
+
+.modal-usuario__btn--verde {
+  background-color: var(--color-secondary);
+}
+
+.modal-usuario__btn--vermelho {
+  background-color: var(--color-danger);
+}
+
+.tabela__nome--clicavel {
+  cursor: pointer;
+}
+
+.tabela__nome--clicavel:hover {
+  color: var(--color-secondary);
+  text-decoration: underline;
+}
