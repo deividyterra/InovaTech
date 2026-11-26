@@ -61,9 +61,11 @@
   --font-bold: 700;
 
   /* Tamanhos dos títulos */
-  --font-size-h1: 32px; /*logo padre bueno*/
-  --font-size-h2: 30px; /*demais títulos*/
-  --font-size-h3: 14px; /*subtítulos*/
+  --font-size-h1: 32px; /*logo padre bueno bold*/
+  --font-size-h2: 42px; /*frases login*/
+  --font-size-h3: 32px; /*semibold*/
+  --font-size-h4: 30px; /*demais títulos*/
+  --font-size-h5: 14px; /*subtítulos*/
 
   /* Tamanhos dos textos */
   --font-size-lg: 16px;
@@ -103,6 +105,7 @@ h1 {
   font-size: var(--font-size-h1);
   font-weight: var(--font-bold);
   line-height: var(--line-height-heading);
+  color: var(--color-surface)
 }
 
 h2 {
@@ -115,6 +118,20 @@ h2 {
 h3 {
   font-family: var(--font-heading);
   font-size: var(--font-size-h3);
+  font-weight: var(--font-semibold);
+  line-height: var(--line-height-heading);
+}
+
+h4 {
+  font-family: var(--font-heading);
+  font-size: var(--font-size-h4);
+  font-weight: var(--font-semibold);
+  line-height: var(--line-height-heading);
+}
+
+h5 {
+  font-family: var(--font-heading);
+  font-size: var(--font-size-h5);
   font-weight: var(--font-regular);
   line-height: var(--line-height-heading);
 }
