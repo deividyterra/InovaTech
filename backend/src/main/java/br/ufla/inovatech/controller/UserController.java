@@ -62,6 +62,36 @@ public class UserController {
                 : ResponseEntity.notFound().build();
     }
 
+    /** RF-005.3: o Administrador edita nome, e-mail e CPF. Login e Perfil não podem ser alterados. */
+    @PutMapping("/{id}")
+    public ResponseEntity<LerResponse> atualizar(
+            @RequestHeader(value = "Authorization", required = false) String authorization,
+            @PathVariable Integer id,
+            @RequestBody @Valid AtualizaRequest request){
+        HttpStatus status = usuarioService.validarPermissao(Sanitizer.token(authorization));
+        if (status != HttpStatus.OK) {
+            return ResponseEntity.status(status).build();
+        }
+        return ResponseEntity.ok(usuarioService.atualizar(id, request));
+    }
+
+    /**
+     * RF-002: troca de senha.
+     * O próprio Usuário precisa informar a senha atual; o Administrador pode alterar a de qualquer um sem ela.
+     */
+    @PutMapping("/{id}/senha")
+    public ResponseEntity<Void> alterarSenha(
+            @RequestHeader(value = "Authorization", required = false) String authorization,
+            @PathVariable Integer id,
+            @RequestBody @Valid AlterarSenhaRequest request){
+        String token = Sanitizer.token(authorization);
+        if (!tokenService.isValido(token)) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+        }
+        usuarioService.alterarSenha(id, request, tokenService.extrairUsuario(token));
+        return ResponseEntity.noContent().build();
+    }
+
     @GetMapping
     public ResponseEntity<List<LerResponse>> consultarTodos(
             @RequestHeader(value = "Authorization", required = false) String authorization){
