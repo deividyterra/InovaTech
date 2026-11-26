@@ -1,32 +1,30 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
+import {
+  alterarSenhaUsuario,
+  atualizarUsuario,
+  cadastrarUsuario,
+  excluirUsuario,
+  listarUsuarios,
+} from "../../services/usuario.api";
 import "./UsuariosPage.css";
 
 /* ========================
-   DADOS MOCK (trocar por usuario.api.js)
+   CONSTANTES
 ======================== */
 
 const PERFIS = [
-  { value: "garcom", label: "Garçom", cor: "yellow" },
-  { value: "cozinheiro", label: "Cozinheiro", cor: "green" },
-  { value: "gestor", label: "Gestor de pedidos", cor: "blue" },
-  { value: "caixa", label: "Caixa", cor: "purple" },
-  { value: "admin", label: "Administrador", cor: "red" },
-];
-
-const USUARIOS_MOCK = [
-  { id: 1, nome: "Marina Costa", cpf: "555.666.777-88", email: "marina@oliveiras.com", perfil: "admin" },
-  { id: 2, nome: "Rafael Mendes", cpf: "333.444.555-66", email: "rafael@oliveiras.com", perfil: "gestor" },
-  { id: 3, nome: "Beatriz Oliveira", cpf: "222.333.444-55", email: "beatriz@oliveiras.com", perfil: "cozinheiro" },
-  { id: 4, nome: "André Lima", cpf: "666.777.888-99", email: "andre@oliveiras.com", perfil: "cozinheiro" },
-  { id: 5, nome: "Clara Nunes", cpf: "111.222.333-44", email: "clara@oliveiras.com", perfil: "garcom" },
-  { id: 6, nome: "Pedro Alves", cpf: "777.888.999-00", email: "pedro@oliveiras.com", perfil: "garcom" },
-  { id: 7, nome: "Lucas Santos", cpf: "444.555.666-77", email: "lucas@oliveiras.com", perfil: "caixa" },
+  { value: "GARCOM", label: "Garçom", cor: "yellow" },
+  { value: "COZINHEIRO", label: "Cozinheiro", cor: "green" },
+  { value: "GESTOR", label: "Gestor de pedidos", cor: "blue" },
+  { value: "CAIXA", label: "Caixa", cor: "purple" },
+  { value: "ADMINISTRADOR", label: "Administrador", cor: "red" },
 ];
 
 const POR_PAGINA = 5;
 
 const FORM_INICIAL = {
   nome: "",
+  nomeUsuario: "",
   cpf: "",
   email: "",
   senha: "",
@@ -101,14 +99,31 @@ function mascararCpf(valor) {
     .replace(/(\d{3})(\d{1,2})$/, "$1-$2");
 }
 
-const perfilInfo = (valor) => PERFIS.find((p) => p.value === valor);
+const perfilInfo = (valor) => {
+  const normalizado = String(valor || "").toUpperCase();
+  if (normalizado === "ADMIN") {
+    return PERFIS.find((p) => p.value === "ADMINISTRADOR");
+  }
+  return (
+    PERFIS.find((p) => p.value === normalizado) || {
+      label: valor || "Usuário",
+      cor: "yellow",
+    }
+  );
+};
+
+const REGEX_SENHA_FORTE = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[^A-Za-z0-9]).{8,20}$/;
 
 /* ========================
    PÁGINA
 ======================== */
 
 export default function UsuariosPage() {
-  const [usuarios, setUsuarios] = useState(USUARIOS_MOCK);
+  const [usuarios, setUsuarios] = useState([]);
+  const [carregando, setCarregando] = useState(true);
+  const [erroLista, setErroLista] = useState("");
+  const [salvando, setSalvando] = useState(false);
+
   const [abaAtiva, setAbaAtiva] = useState("todos");
   const [busca, setBusca] = useState("");
   const [filtroPerfil, setFiltroPerfil] = useState("todos");
@@ -119,6 +134,7 @@ export default function UsuariosPage() {
 
   // Modal de feedback de cadastro: null | "sucesso" | "erro"
   const [modalStatus, setModalStatus] = useState(null);
+  const [mensagemErroModal, setMensagemErroModal] = useState("");
 
   // Modal de ação do usuário: null | { modo: "visualizar" | "editar" | "excluir", usuario }
   const [modalUsuario, setModalUsuario] = useState(null);
@@ -129,14 +145,32 @@ export default function UsuariosPage() {
     senha: "",
   });
 
+  async function carregarUsuarios() {
+    setCarregando(true);
+    setErroLista("");
+    try {
+      const lista = await listarUsuarios();
+      setUsuarios(lista);
+    } catch (err) {
+      setErroLista(err.message || "Não foi possível carregar os usuários.");
+    } finally {
+      setCarregando(false);
+    }
+  }
+
+  useEffect(() => {
+    carregarUsuarios();
+  }, []);
+
   const filtrados = useMemo(() => {
     const termo = busca.trim().toLowerCase();
     return usuarios.filter((u) => {
       const bateAba = abaAtiva === "todos" || u.perfil === "admin";
       const bateBusca =
         !termo ||
-        u.nome.toLowerCase().includes(termo) ||
-        u.email.toLowerCase().includes(termo);
+        u.nome?.toLowerCase().includes(termo) ||
+        u.email?.toLowerCase().includes(termo) ||
+        u.nomeUsuario?.toLowerCase().includes(termo);
       const batePerfil = filtroPerfil === "todos" || u.perfil === filtroPerfil;
       return bateAba && bateBusca && batePerfil;
     });
@@ -169,9 +203,9 @@ export default function UsuariosPage() {
 
   function abrirModalUsuario(modo, usuario) {
     setFormEdicao({
-      nome: usuario.nome,
+      nome: usuario.nome || "",
       cpf: usuario.cpf || "",
-      email: usuario.email,
+      email: usuario.email || "",
       senha: "••••••••••••",
     });
     setModalUsuario({ modo, usuario });
@@ -179,73 +213,119 @@ export default function UsuariosPage() {
 
   async function handleSubmitNovo(e) {
     e.preventDefault();
+    if (salvando) return;
 
     try {
-      const nomeValido = form.nome.trim().length >= 3;
-      const cpfValido = form.cpf.replace(/\D/g, "").length === 11;
+      const nomeLimpo = form.nome.trim();
+      const loginLimpo = form.nomeUsuario.trim();
+      const cpfLimpo = form.cpf.replace(/\D/g, "");
       const emailNormalizado = form.email.trim().toLowerCase();
-      const emailValido = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(emailNormalizado);
-      const senhaValida = form.senha.length >= 8;
 
-      const jaExiste = usuarios.some(
-        (u) =>
-          u.email.toLowerCase() === emailNormalizado ||
-          (cpfValido && u.cpf === form.cpf)
-      );
-
-      if (!nomeValido || !cpfValido || !emailValido || !senhaValida || jaExiste) {
-        throw new Error("Dados inválidos ou credenciais já utilizadas.");
+      if (nomeLimpo.length < 8 || nomeLimpo.length > 60) {
+        throw new Error("O nome completo deve ter entre 8 e 60 caracteres.");
+      }
+      if (loginLimpo.length < 8 || loginLimpo.length > 30) {
+        throw new Error("O nome de usuário (login) deve ter entre 8 e 30 caracteres.");
+      }
+      if (cpfLimpo.length !== 11) {
+        throw new Error("Informe um CPF válido com 11 dígitos.");
+      }
+      if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(emailNormalizado)) {
+        throw new Error("Informe um e-mail válido.");
+      }
+      if (!REGEX_SENHA_FORTE.test(form.senha)) {
+        throw new Error(
+          "A senha deve ter de 8 a 20 caracteres, com letra maiúscula, minúscula, número e caractere especial."
+        );
       }
 
-      // TODO: trocar por const criado = await criarUsuario(form)
-      const novoUsuario = {
-        id: Date.now(),
-        nome: form.nome.trim(),
-        cpf: form.cpf,
-        email: form.email.trim(),
-        perfil: form.perfil,
-      };
+      setSalvando(true);
+      await cadastrarUsuario(form);
 
-      setUsuarios((lista) => [novoUsuario, ...lista]);
       setForm(FORM_INICIAL);
       setPagina(1);
       setModalStatus("sucesso");
-    } catch {
+      await carregarUsuarios();
+    } catch (err) {
+      setMensagemErroModal(
+        err.message ||
+          "Ocorreu um erro ao tentar registrar um novo usuário. Confira os dados e tente novamente."
+      );
       setModalStatus("erro");
+    } finally {
+      setSalvando(false);
     }
   }
 
   async function handleSalvarEdicao(e) {
     e.preventDefault();
-    if (!modalUsuario) return;
+    if (!modalUsuario || salvando) return;
 
     const { usuario } = modalUsuario;
     const nomeLimpo = formEdicao.nome.trim();
     const emailLimpo = formEdicao.email.trim();
     const cpfLimpo = formEdicao.cpf;
 
-    if (nomeLimpo.length < 3 || cpfLimpo.replace(/\D/g, "").length !== 11 || !emailLimpo) {
+    if (
+      nomeLimpo.length < 8 ||
+      nomeLimpo.length > 60 ||
+      cpfLimpo.replace(/\D/g, "").length !== 11 ||
+      !emailLimpo
+    ) {
+      alert("Verifique os campos: nome (8 a 60 caracteres), CPF válido e e-mail.");
       return;
     }
 
-    // TODO: trocar por await atualizarUsuario(usuario.id, formEdicao)
-    setUsuarios((lista) =>
-      lista.map((u) =>
-        u.id === usuario.id
-          ? { ...u, nome: nomeLimpo, cpf: cpfLimpo, email: emailLimpo }
-          : u
-      )
-    );
-    setModalUsuario(null);
+    const alterouSenha =
+      formEdicao.senha && formEdicao.senha !== "••••••••••••";
+
+    if (alterouSenha && !REGEX_SENHA_FORTE.test(formEdicao.senha)) {
+      alert(
+        "A nova senha deve ter de 8 a 20 caracteres, com letra maiúscula, minúscula, número e caractere especial."
+      );
+      return;
+    }
+
+    try {
+      setSalvando(true);
+      const atualizado = await atualizarUsuario(usuario.id, {
+        nome: nomeLimpo,
+        email: emailLimpo,
+        cpf: cpfLimpo,
+      });
+
+      if (alterouSenha) {
+        await alterarSenhaUsuario(usuario.id, {
+          novaSenha: formEdicao.senha,
+          confirmarSenha: formEdicao.senha,
+        });
+      }
+
+      setUsuarios((lista) =>
+        lista.map((u) => (u.id === usuario.id ? { ...u, ...atualizado } : u))
+      );
+      setModalUsuario(null);
+    } catch (err) {
+      alert(err.message || "Erro ao atualizar usuário.");
+    } finally {
+      setSalvando(false);
+    }
   }
 
   async function handleConfirmarExclusao() {
-    if (!modalUsuario) return;
+    if (!modalUsuario || salvando) return;
     const { usuario } = modalUsuario;
 
-    // TODO: trocar por await excluirUsuario(usuario.id)
-    setUsuarios((lista) => lista.filter((u) => u.id !== usuario.id));
-    setModalUsuario(null);
+    try {
+      setSalvando(true);
+      await excluirUsuario(usuario.id);
+      setUsuarios((lista) => lista.filter((u) => u.id !== usuario.id));
+      setModalUsuario(null);
+    } catch (err) {
+      alert(err.message || "Erro ao excluir usuário.");
+    } finally {
+      setSalvando(false);
+    }
   }
 
   return (
@@ -270,7 +350,7 @@ export default function UsuariosPage() {
                     Novo usuário cadastrado com sucesso!
                   </h3>
                   <p className="modal-feedback__descricao">
-                    Informe os tokens de acesso para o novo usuário.
+                    Informe os dados de acesso para o novo usuário.
                   </p>
                 </div>
                 <button
@@ -289,11 +369,7 @@ export default function UsuariosPage() {
                   <h3 className="modal-feedback__titulo">
                     Erro ao cadastrar novo usuário.
                   </h3>
-                  <p className="modal-feedback__descricao">
-                    Ocorreu um erro ao tentar registrar um novo usuário. Confira se as
-                    credenciais já não estão sendo utilizadas e tente novamente. Se o
-                    problema persistir, consulte um técnico.
-                  </p>
+                  <p className="modal-feedback__descricao">{mensagemErroModal}</p>
                 </div>
                 <button
                   type="button"
@@ -393,7 +469,10 @@ export default function UsuariosPage() {
                     className="input"
                     value={formEdicao.senha}
                     onFocus={() => {
-                      if (modalUsuario.modo === "editar" && formEdicao.senha === "••••••••••••") {
+                      if (
+                        modalUsuario.modo === "editar" &&
+                        formEdicao.senha === "••••••••••••"
+                      ) {
                         setFormEdicao((f) => ({ ...f, senha: "" }));
                       }
                     }}
@@ -417,7 +496,6 @@ export default function UsuariosPage() {
               </label>
             </div>
 
-            {/* Botões de rodapé conforme o modo */}
             {modalUsuario.modo === "visualizar" && (
               <div className="modal-usuario__acoes">
                 <button
@@ -447,14 +525,16 @@ export default function UsuariosPage() {
                   type="button"
                   className="modal-usuario__btn modal-usuario__btn--vermelho"
                   onClick={() => setModalUsuario(null)}
+                  disabled={salvando}
                 >
                   Cancelar
                 </button>
                 <button
                   type="submit"
                   className="modal-usuario__btn modal-usuario__btn--verde"
+                  disabled={salvando}
                 >
-                  Salvar
+                  {salvando ? "Salvando..." : "Salvar"}
                 </button>
               </div>
             )}
@@ -465,6 +545,7 @@ export default function UsuariosPage() {
                   type="button"
                   className="modal-usuario__btn modal-usuario__btn--verde"
                   onClick={() => setModalUsuario(null)}
+                  disabled={salvando}
                 >
                   Cancelar
                 </button>
@@ -472,8 +553,9 @@ export default function UsuariosPage() {
                   type="button"
                   className="modal-usuario__btn modal-usuario__btn--vermelho"
                   onClick={handleConfirmarExclusao}
+                  disabled={salvando}
                 >
-                  Excluir
+                  {salvando ? "Excluindo..." : "Excluir"}
                 </button>
               </div>
             )}
@@ -524,7 +606,7 @@ export default function UsuariosPage() {
           <div className="topbar__right">
             <span className="topbar__sync">
               <i className="topbar__dot" />
-              Sincronizado agora
+              {carregando ? "Sincronizando..." : "Sincronizado agora"}
             </span>
             <div className="topbar__user">
               <strong>Marina Costa</strong>
@@ -629,45 +711,63 @@ export default function UsuariosPage() {
                   </tr>
                 </thead>
                 <tbody>
-                  {visiveis.map((u) => {
-                    const p = perfilInfo(u.perfil);
-                    return (
-                      <tr key={u.id}>
-                        <td>
-                          <strong
-                            className="tabela__nome tabela__nome--clicavel"
-                            onClick={() => abrirModalUsuario("visualizar", u)}
-                          >
-                            {u.nome}
-                          </strong>
-                          <span className="tabela__email">{u.email}</span>
-                        </td>
-                        <td>
-                          <span className={`badge badge--${p.cor}`}>{p.label}</span>
-                        </td>
-                        <td>
-                          <button
-                            type="button"
-                            className="acao acao--editar"
-                            onClick={() => abrirModalUsuario("editar", u)}
-                          >
-                            Editar
-                          </button>
-                        </td>
-                        <td>
-                          <button
-                            type="button"
-                            className="acao acao--excluir"
-                            onClick={() => abrirModalUsuario("excluir", u)}
-                          >
-                            Excluir
-                          </button>
-                        </td>
-                      </tr>
-                    );
-                  })}
+                  {carregando && (
+                    <tr>
+                      <td colSpan="4" className="tabela__vazio">
+                        Carregando usuários...
+                      </td>
+                    </tr>
+                  )}
 
-                  {visiveis.length === 0 && (
+                  {!carregando && erroLista && (
+                    <tr>
+                      <td colSpan="4" className="tabela__vazio">
+                        {erroLista}
+                      </td>
+                    </tr>
+                  )}
+
+                  {!carregando &&
+                    !erroLista &&
+                    visiveis.map((u) => {
+                      const p = perfilInfo(u.perfil);
+                      return (
+                        <tr key={u.id}>
+                          <td>
+                            <strong
+                              className="tabela__nome tabela__nome--clicavel"
+                              onClick={() => abrirModalUsuario("visualizar", u)}
+                            >
+                              {u.nome}
+                            </strong>
+                            <span className="tabela__email">{u.email}</span>
+                          </td>
+                          <td>
+                            <span className={`badge badge--${p.cor}`}>{p.label}</span>
+                          </td>
+                          <td>
+                            <button
+                              type="button"
+                              className="acao acao--editar"
+                              onClick={() => abrirModalUsuario("editar", u)}
+                            >
+                              Editar
+                            </button>
+                          </td>
+                          <td>
+                            <button
+                              type="button"
+                              className="acao acao--excluir"
+                              onClick={() => abrirModalUsuario("excluir", u)}
+                            >
+                              Excluir
+                            </button>
+                          </td>
+                        </tr>
+                      );
+                    })}
+
+                  {!carregando && !erroLista && visiveis.length === 0 && (
                     <tr>
                       <td colSpan="4" className="tabela__vazio">
                         Nenhum usuário encontrado.
@@ -710,13 +810,25 @@ export default function UsuariosPage() {
               <h3>Novo usuário</h3>
 
               <label className="campo">
-                <span>Nome completo</span>
+                <span>Nome completo (mín. 8 caracteres)</span>
                 <input
                   type="text"
                   name="nome"
                   className="input"
-                  placeholder="Digite o nome"
+                  placeholder="Digite o nome completo"
                   value={form.nome}
+                  onChange={handleChange}
+                />
+              </label>
+
+              <label className="campo">
+                <span>Nome de usuário / Login (mín. 8 caracteres)</span>
+                <input
+                  type="text"
+                  name="nomeUsuario"
+                  className="input"
+                  placeholder="ex: marina.costa"
+                  value={form.nomeUsuario}
                   onChange={handleChange}
                 />
               </label>
@@ -751,7 +863,7 @@ export default function UsuariosPage() {
                   type="password"
                   name="senha"
                   className="input"
-                  placeholder="••••••••••••"
+                  placeholder="Ex: Senha@123"
                   value={form.senha}
                   onChange={handleChange}
                 />
@@ -773,8 +885,8 @@ export default function UsuariosPage() {
                 </select>
               </label>
 
-              <button type="submit" className="btn-criar">
-                Criar usuário
+              <button type="submit" className="btn-criar" disabled={salvando}>
+                {salvando ? "Criando..." : "Criar usuário"}
               </button>
             </form>
           </div>
