@@ -15,7 +15,7 @@ public class Usuario {
     private String nome;
     private String email;
     @Column(name = "login_usuario")
-    private String userName;
+    private String nomeUsuario;
     private String senha;
     @Column(name = "cpf", length = 11, nullable = false, unique = true)
     @JdbcTypeCode(SqlTypes.CHAR)
@@ -50,12 +50,12 @@ public class Usuario {
         this.senha = senha;
     }
 
-    public String getUserName() {
-        return userName;
+    public String getNomeUsuario() {
+        return nomeUsuario;
     }
 
-    public void setUserName(String userName) {
-        this.userName = userName;
+    public void setNomeUsuario(String nomeUsuario) {
+        this.nomeUsuario = nomeUsuario;
     }
 
     public String getEmail() {
