@@ -1,6 +1,7 @@
 package br.ufla.inovatech.service;
 
 import br.ufla.inovatech.dto.usuario.AuthRequest;
+import br.ufla.inovatech.dto.usuario.LerResponse;
 import br.ufla.inovatech.dto.usuario.RegisterRequest;
 import br.ufla.inovatech.model.Usuario;
 import br.ufla.inovatech.repository.UsuarioRepository;
@@ -9,6 +10,9 @@ import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.web.server.ResponseStatusException;
 import org.springframework.web.bind.annotation.RequestBody;
+
+import java.util.ArrayList;
+import java.util.List;
 
 @Service
 public class UsuarioService {
@@ -49,6 +53,16 @@ public class UsuarioService {
         return usuarioRepository.findById(id).orElse(null);
     }
 
+    /** Consulta um usuário pelo id, sem expor a senha. Retorna null se não existir. */
+    public LerResponse consultarPorId(Integer id){
+        Usuario usuario = consultarId(id);
+        return usuario != null ? paraResponse(usuario) : null;
+    }
+
+    private LerResponse paraResponse(Usuario u){
+        return new LerResponse(u.getId(), u.getEmail(), u.getNome(), u.getUserName(), u.getCpf(), u.getPerfil());
+    }
+
     public boolean deletar(Integer id){
         Usuario usuario = consultarId(id);
         if (usuario == null) return false;
@@ -61,4 +75,14 @@ public class UsuarioService {
         if (!"ADMINISTRADOR".equals(tokenService.extrairPerfil(token))) return HttpStatus.FORBIDDEN;
         return HttpStatus.OK;
     }
+
+    public List<LerResponse> consultarTodos(){
+        List<Usuario> usuarios = usuarioRepository.findAll();
+        List<LerResponse> responses = new ArrayList<>();
+        for(Usuario u : usuarios){
+            responses.add(paraResponse(u));
+        }
+        return responses;
+    }
+
 }
