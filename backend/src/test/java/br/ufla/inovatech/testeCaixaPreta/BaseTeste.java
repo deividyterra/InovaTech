@@ -16,10 +16,10 @@ import java.util.logging.Logger;
 import static io.restassured.RestAssured.given;
 import static org.junit.jupiter.api.Assertions.*;
 
-public abstract class BaseTest {
+public abstract class BaseTeste {
 
-    private static final Logger LOGGER = Logger.getLogger(BaseTest.class.getName());
-    private static Set<TestEntity> cleanEntity;
+    private static final Logger LOGGER = Logger.getLogger(BaseTeste.class.getName());
+    private static Set<EntidadeTestes> cleanEntity;
 
     @BeforeAll
     public static void setup(){
@@ -37,7 +37,7 @@ public abstract class BaseTest {
         cleanEntity = new LinkedHashSet<>();
     }
 
-    public Response putAndGet(TestEntity data,String path){
+    public Response putAndGet(EntidadeTestes data, String path){
         Response tempResponse;
 
         tempResponse = given().contentType("application/json").body(data).when().put(path + "/" + data.getId()).then().extract().response();
@@ -56,7 +56,7 @@ public abstract class BaseTest {
         return tempResponse;
     }
 
-    public static Response fillFormAndGet(TestEntity data, String path){
+    public static Response fillFormAndGet(EntidadeTestes data, String path){
         Response tempResponse;
 
         tempResponse = given().contentType("application/json").body(data).when().post(path).then().extract().response();
@@ -70,7 +70,7 @@ public abstract class BaseTest {
         return tempResponse;
     }
 
-    public static void cleanBefore(TestEntity testEntity,String field,String content){
+    public static void cleanBefore(EntidadeTestes testEntity, String field, String content){
         int rows;
         String tableName = testEntity.getClass().getName().toLowerCase(Locale.ROOT);
 
@@ -88,7 +88,7 @@ public abstract class BaseTest {
 
         LOGGER.info("Executando a limpeza das entidades utilizadas no teste");
 
-        for (TestEntity e : cleanEntity) {
+        for (EntidadeTestes e : cleanEntity) {
             tableName = e.getClass().getName();
             DbUtils.executar("DELETE FROM public." + tableName + " WHERE id" + " = ?", e.getId());
         }
@@ -97,7 +97,7 @@ public abstract class BaseTest {
     }
 
     public static File getPayload(String name){
-        return new File(BaseTest.class.getClassLoader().getResource("payload/" + name).getFile());
+        return new File(BaseTeste.class.getClassLoader().getResource("payload/" + name).getFile());
     }
 
 }
