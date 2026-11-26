@@ -16,6 +16,12 @@ public class UsuarioAPICasoTeste extends BaseTeste{
     private static final Logger LOGGER = Logger.getLogger(UsuarioAPICasoTeste.class.getName());
     private static final String caminho = "/usuario";
 
+    public void limpar(Usuario usuario){
+        cleanBefore(usuario,"cpf",usuario.getCpf());
+        cleanBefore(usuario,"login_usuario",usuario.getNomeUsuario());
+        cleanBefore(usuario,"email", usuario.getEmail());
+    }
+
     @Test
     public void usuarioFluxoSimples(){
         Response response;
@@ -23,7 +29,7 @@ public class UsuarioAPICasoTeste extends BaseTeste{
 
         LOGGER.info("efetua o registro de um novo usuário");
         usuario = new Usuario(getPayload("cadastro.json"));
-        cleanBefore(usuario,"cpf", usuario.getCpf());
+        limpar(usuario);
         response = fillFormAndGet(usuario,caminho + "/cadastro");
         assertEquals(200,response.statusCode(),"Não foi possivel realizar o cadastro do usuário");
 
@@ -40,7 +46,7 @@ public class UsuarioAPICasoTeste extends BaseTeste{
         usuario.setCpf("01234567890");
         usuario.setEmail("TesteEdicao@123.com");
         usuario.setNome("Usuario Editado"); // nome exige no mínimo 8 caracteres
-        cleanBefore(usuario,"cpf", usuario.getCpf());
+        limpar(usuario);
         response = putAndGet(usuario,caminho); // putAndGet já concatena "/" + id
         assertEquals(200,response.statusCode(),"Não foi possível alterar a entidade");
 
@@ -64,7 +70,15 @@ public class UsuarioAPICasoTeste extends BaseTeste{
 
     @Test
     public void cadastroSenhaFraca(){
+        Response response;
+        Usuario usuario;
+
         LOGGER.info("Tenta efetuar o cadastro utilizando uma senha fraca");
+        usuario = new Usuario(getPayload("cadastro.json"));
+        limpar(usuario);
+        usuario.setSenha("123");
+        response = fillFormAndGet(usuario,caminho + "/cadastro");
+        assertEquals(400,response.statusCode(),"Erro na validação de senha fraca");
     }
 
     @Test
