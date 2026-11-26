@@ -1,20 +1,18 @@
 package br.ufla.inovatech.controller;
 
-import br.ufla.inovatech.dto.usuario.AuthRequest;
-import br.ufla.inovatech.dto.usuario.AuthResponse;
-import br.ufla.inovatech.dto.usuario.DeleteRequest;
-import br.ufla.inovatech.dto.usuario.RegisterRequest;
+import br.ufla.inovatech.dto.usuario.*;
+import br.ufla.inovatech.service.Sanitizer;
 import br.ufla.inovatech.service.TokenService;
 import br.ufla.inovatech.service.UsuarioService;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.DeleteMapping;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
+
+import java.util.List;
 
 @RestController
+@RequestMapping("/usuario")
 public class UserController {
 
     private final TokenService tokenService;
@@ -37,15 +35,41 @@ public class UserController {
         return ResponseEntity.ok(new AuthResponse(token,"Login realizado com sucesso"));
     }
 
-    @DeleteMapping("/usuarios")
-    public ResponseEntity<Void> delete(@RequestBody @Valid DeleteRequest request){
-        HttpStatus status = usuarioService.validarPermissao(request.token());
+    @DeleteMapping("/{id}")
+    public ResponseEntity<Void> delete(
+            @RequestHeader(value = "Authorization", required = false) String authorization,
+            @PathVariable Integer id){
+        HttpStatus status = usuarioService.validarPermissao(Sanitizer.token(authorization));
         if (status != HttpStatus.OK) {
             return ResponseEntity.status(status).build();
         }
-        return usuarioService.deletar(request.id())
+        return usuarioService.deletar(id)
                 ? ResponseEntity.noContent().build()
                 : ResponseEntity.notFound().build();
+    }
+
+    @GetMapping("/{id}")
+    public ResponseEntity<LerResponse> consultarPorId(
+            @RequestHeader(value = "Authorization", required = false) String authorization,
+            @PathVariable Integer id){
+        HttpStatus status = usuarioService.validarPermissao(Sanitizer.token(authorization));
+        if (status != HttpStatus.OK) {
+            return ResponseEntity.status(status).build();
+        }
+        LerResponse usuario = usuarioService.consultarPorId(id);
+        return usuario != null
+                ? ResponseEntity.ok(usuario)
+                : ResponseEntity.notFound().build();
+    }
+
+    @GetMapping
+    public ResponseEntity<List<LerResponse>> consultarTodos(
+            @RequestHeader(value = "Authorization", required = false) String authorization){
+        HttpStatus status = usuarioService.validarPermissao(Sanitizer.token(authorization));
+        if(status != HttpStatus.OK) {
+            return ResponseEntity.status(status).build();
+        }
+        return ResponseEntity.status(HttpStatus.OK).body(usuarioService.consultarTodos());
     }
 
 }

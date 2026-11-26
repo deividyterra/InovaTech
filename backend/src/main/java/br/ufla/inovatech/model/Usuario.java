@@ -30,6 +30,10 @@ public class Usuario {
         this.perfil = perfil;
     }
 
+    public Integer getId() {
+        return id;
+    }
+
     public String getCpf() {
         return cpf;
     }
