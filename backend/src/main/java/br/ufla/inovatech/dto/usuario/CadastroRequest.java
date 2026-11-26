@@ -7,7 +7,7 @@ import jakarta.validation.constraints.Pattern;
 import jakarta.validation.constraints.Size;
 import org.hibernate.validator.constraints.br.CPF;
 
-public record RegisterRequest(
+public record CadastroRequest(
    @NotBlank
    @Size(max = 60 , min = 8)
    String nome,
@@ -33,7 +33,7 @@ public record RegisterRequest(
    String cpf
 
 ) {
-   public RegisterRequest {
+   public CadastroRequest {
       nome = Sanitizer.texto(nome);
       email = Sanitizer.email(email);
       cpf = Sanitizer.cpf(cpf);

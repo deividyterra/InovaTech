@@ -4,7 +4,7 @@ import br.ufla.inovatech.service.Sanitizer;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
 
-public record AuthRequest(
+public record LoginRequest(
         @NotBlank
         @Email
         String email,
@@ -12,7 +12,7 @@ public record AuthRequest(
         @NotBlank
         String senha
 ) {
-    public AuthRequest{
+    public LoginRequest{
         email = Sanitizer.email(email);
     }
 }

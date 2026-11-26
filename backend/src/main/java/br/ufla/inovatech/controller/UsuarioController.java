@@ -13,30 +13,30 @@ import java.util.List;
 
 @RestController
 @RequestMapping("/usuario")
-public class UserController {
+public class UsuarioController {
 
     private final TokenService tokenService;
     private final UsuarioService usuarioService;
 
-    public UserController(TokenService tokenService, UsuarioService usuarioService) {
+    public UsuarioController(TokenService tokenService, UsuarioService usuarioService) {
         this.tokenService = tokenService;
         this.usuarioService = usuarioService;
     }
 
-    @PostMapping("/register")
-    public ResponseEntity<AuthResponse> register(@RequestBody @Valid RegisterRequest request){
-        String token = usuarioService.register(request);
-        return ResponseEntity.ok(new AuthResponse(token,"Cadastro realizado com sucesso"));
+    @PostMapping("/cadastro")
+    public ResponseEntity<TokenResponse> cadastrar(@RequestBody @Valid CadastroRequest request){
+        String token = usuarioService.cadastrar(request);
+        return ResponseEntity.ok(new TokenResponse(token,"Cadastro realizado com sucesso"));
     }
 
     @PostMapping("/login")
-    public ResponseEntity<AuthResponse> login(@RequestBody @Valid AuthRequest request){
-        String token = usuarioService.auth(request);
-        return ResponseEntity.ok(new AuthResponse(token,"Login realizado com sucesso"));
+    public ResponseEntity<TokenResponse> login(@RequestBody @Valid LoginRequest request){
+        String token = usuarioService.autenticar(request);
+        return ResponseEntity.ok(new TokenResponse(token,"Login realizado com sucesso"));
     }
 
     @DeleteMapping("/{id}")
-    public ResponseEntity<Void> delete(
+    public ResponseEntity<Void> excluir(
             @RequestHeader(value = "Authorization", required = false) String authorization,
             @PathVariable Integer id){
         HttpStatus status = usuarioService.validarPermissao(Sanitizer.token(authorization));
@@ -85,7 +85,7 @@ public class UserController {
             @PathVariable Integer id,
             @RequestBody @Valid AlterarSenhaRequest request){
         String token = Sanitizer.token(authorization);
-        if (!tokenService.isValido(token)) {
+        if (!tokenService.tokenValido(token)) {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
         }
         usuarioService.alterarSenha(id, request, tokenService.extrairUsuario(token));

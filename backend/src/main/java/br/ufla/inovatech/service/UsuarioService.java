@@ -3,9 +3,9 @@ package br.ufla.inovatech.service;
 import br.ufla.inovatech.dto.UsuarioTokenDTO;
 import br.ufla.inovatech.dto.usuario.AlterarSenhaRequest;
 import br.ufla.inovatech.dto.usuario.AtualizaRequest;
-import br.ufla.inovatech.dto.usuario.AuthRequest;
+import br.ufla.inovatech.dto.usuario.LoginRequest;
 import br.ufla.inovatech.dto.usuario.LerResponse;
-import br.ufla.inovatech.dto.usuario.RegisterRequest;
+import br.ufla.inovatech.dto.usuario.CadastroRequest;
 import br.ufla.inovatech.model.Usuario;
 import br.ufla.inovatech.repository.UsuarioRepository;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -30,12 +30,12 @@ public class UsuarioService {
         this.tokenService = tokenService;
     }
 
-    public String register(@RequestBody RegisterRequest request){
+    public String cadastrar(@RequestBody CadastroRequest request){
 
         Usuario usuario = new Usuario();
         usuario.setEmail(request.email());
         usuario.setNome(request.nome());
-        usuario.setUserName(request.nomeUsuario());
+        usuario.setNomeUsuario(request.nomeUsuario());
         usuario.setSenha(passwordEncoder.encode(request.senha()));
         usuario.setCpf(request.cpf());
         usuario.setPerfil("GARCOM");
@@ -44,7 +44,7 @@ public class UsuarioService {
         return tokenService.gerarToken(usuario.getEmail(), usuario.getCpf(), usuario.getPerfil());
     }
 
-    public String auth(@RequestBody AuthRequest request){
+    public String autenticar(@RequestBody LoginRequest request){
         Usuario usuario = usuarioRepository.findByEmail(request.email());
         if (usuario == null || !passwordEncoder.matches(request.senha(), usuario.getSenha())) {
             throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Email ou senha inválidos");
@@ -63,7 +63,7 @@ public class UsuarioService {
     }
 
     private LerResponse paraResponse(Usuario u){
-        return new LerResponse(u.getId(), u.getEmail(), u.getNome(), u.getUserName(), u.getCpf(), u.getPerfil());
+        return new LerResponse(u.getId(), u.getEmail(), u.getNome(), u.getNomeUsuario(), u.getCpf(), u.getPerfil());
     }
 
     public boolean deletar(Integer id){
@@ -126,7 +126,7 @@ public class UsuarioService {
     }
 
     public HttpStatus validarPermissao(String token){
-        if (!tokenService.isValido(token)) return HttpStatus.UNAUTHORIZED;
+        if (!tokenService.tokenValido(token)) return HttpStatus.UNAUTHORIZED;
         if (!"ADMINISTRADOR".equals(tokenService.extrairPerfil(token))) return HttpStatus.FORBIDDEN;
         return HttpStatus.OK;
     }
