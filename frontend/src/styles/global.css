@@ -1,0 +1,147 @@
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+:root {
+  /* ========================
+     CORES
+  ======================== */
+
+  /* Identidade visual da marca */
+  --color-primary: #263D2B;
+  --color-title-primary: #ffffff;
+  --color-text-primary: #E5EBDC;
+  --color-primary-hover: #DCE7B5;
+  --color-text-primary-hover: #263D2B;
+  --color-secondary: #496339;
+
+  /* Estrutura */
+  --color-background: #F3F1E9;
+  --color-surface: #ffffff;
+  --color-text: #171B16;
+  --color-text-muted: #686F65;
+
+  /* Cores de borda so card e texto para os status */
+  --color-border-yellow: #F5E7C8; /* amarelo */
+  --color-text-yellow: #92601D;
+
+  --color-border-blue: #DFEAF4; /* azul */
+  --color-text-blue: #315C82;
+
+  --color-border-green: #DEE9D1; /* verde */
+  --color-text-green: #496339;
+
+  --color-border-purple: #EAE1F0; /* roxo */
+  --color-text-purple: #71518C;
+
+  --color-border-gray: #E4E6DE; /* cinza */
+  --color-text-gray: #596552;
+
+  --color-border-red: #F5DDDA; /* vermelho */
+  --color-text-red: #943232;
+
+  /* Cores de alerta */
+  --color-danger: #943232;
+  --color-success: #496339;
+
+  /* ========================
+     TIPOGRAFIA
+  ======================== */
+
+  /* Famílias */
+  --font-heading: 'Manrope', sans-serif;
+  --font-body: 'Inter', sans-serif;
+
+  /* Pesos */
+  --font-regular: 400;
+  --font-medium: 500;
+  --font-semibold: 600;
+  --font-bold: 700;
+
+  /* Tamanhos dos títulos */
+  --font-size-h1: 32px; /*logo padre bueno bold*/
+  --font-size-h2: 42px; /*frases login*/
+  --font-size-h3: 32px; /*semibold*/
+  --font-size-h4: 30px; /*demais títulos*/
+  --font-size-h5: 14px; /*subtítulos*/
+
+  /* Tamanhos dos textos */
+  --font-size-lg: 16px;
+  --font-size-md: 14px;
+  --font-size-sm: 13px;
+  --font-size-xs: 11px;
+
+    /* Tamanhos dos textos específicos */
+  --font-size-body-infos: 11px; /* frase em capslock*/
+  --font-size-card-title: 13px; /* títulos de cards */
+
+   /* Alturas de linha */
+  --line-height-heading: 1.2;
+  --line-height-body: 1.5;
+}
+
+/* ========================
+   CONFIGURAÇÕES GERAIS
+======================== */
+
+body {
+  font-family: var(--font-body);
+  font-size: var(--font-size-md);
+  font-weight: var(--font-regular);
+  line-height: var(--line-height-body);
+  background-color: var(--color-background);
+  color: var(--color-text);
+  -webkit-font-smoothing: antialiased;
+}
+
+/* ========================
+   TÍTULOS
+======================== */
+
+h1 {
+  font-family: var(--font-heading);
+  font-size: var(--font-size-h1);
+  font-weight: var(--font-bold);
+  line-height: var(--line-height-heading);
+  color: var(--color-surface)
+}
+
+h2 {
+  font-family: var(--font-heading);
+  font-size: var(--font-size-h2);
+  font-weight: var(--font-semibold);
+  line-height: var(--line-height-heading);
+}
+
+h3 {
+  font-family: var(--font-heading);
+  font-size: var(--font-size-h3);
+  font-weight: var(--font-semibold);
+  line-height: var(--line-height-heading);
+}
+
+h4 {
+  font-family: var(--font-heading);
+  font-size: var(--font-size-h4);
+  font-weight: var(--font-semibold);
+  line-height: var(--line-height-heading);
+}
+
+h5 {
+  font-family: var(--font-heading);
+  font-size: var(--font-size-h5);
+  font-weight: var(--font-regular);
+  line-height: var(--line-height-heading);
+}
+
+/* ========================
+   BOTÕES
+======================== */
+
+button {
+  cursor: pointer;
+  font-family: var(--font-body);
+  font-weight: var(--font-medium);
+}
