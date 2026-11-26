@@ -69,6 +69,14 @@ public class UsuarioService {
     public boolean deletar(Integer id){
         Usuario usuario = consultarId(id);
         if (usuario == null) return false;
+
+        // RN13: o sistema deve ter sempre pelo menos um Administrador cadastrado.
+        if ("ADMINISTRADOR".equals(usuario.getPerfil())
+                && usuarioRepository.countByPerfil("ADMINISTRADOR") <= 1) {
+            throw new ResponseStatusException(HttpStatus.CONFLICT,
+                    "Não é possível excluir o último Administrador do sistema");
+        }
+
         usuarioRepository.delete(usuario);
         return true;
     }
