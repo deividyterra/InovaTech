@@ -1,85 +1,172 @@
-import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { Lock, Mail, Eye, EyeOff } from 'lucide-react';
-import './LoginPage.css';
+import { useState } from "react";
+import "./LoginPage.css";
+import risotoImg from "../../assets/risoto-cogumelos.png";
 
-export function LoginPage() {
-  const navigate = useNavigate();
-  const [email, setEmail] = useState('');
-  const [senha, setSenha] = useState('');
+export default function LoginPage({ onEsqueceuSenha }) {
+  const [identificador, setIdentificador] = useState("");
+  const [senha, setSenha] = useState("");
   const [mostrarSenha, setMostrarSenha] = useState(false);
 
-  function handleLogin(event) {
-    event.preventDefault();
-
-    // redireciona direto para a gestão de usuários para a entrega parcial da
-    navigate('/usuarios');
-  }
+  const handleSubmit = (e) => {
+    e.preventDefault();
+    // Etapa atual: apenas visual (a integração com POST /api/usuario/login será feita depois)
+    console.log("Dados preenchidos no formulário:", { identificador, senha });
+  };
 
   return (
-
-    <div className="LoginPage"> 
-    <div className="SideInfos-container">
-        <div className="logo-header">
-            <h1>padre bueno</h1>
-        </div>
-        <div className="side-info">
-            <h2>Uma boa operação. Uma ótima experiência.</h2>
-        </div>
-    </div>
-
     <div className="login-container">
-      <div className="login-card">
-        <div className="login-header">
-          <h3>Tudo pronto para o serviço?</h3>
-          <p>Entre com sua conta para acessar sua área.</p>
+      {/* LADO ESQUERDO - INSTITUCIONAL */}
+      <aside className="login-left">
+        <div>
+          <h1 className="login-brand">padre bueno</h1>
+
+          <div className="login-hero">
+            <h2 className="login-hero-title">
+              Uma boa operação.
+              <br />
+              Uma ótima
+              <br />
+              experiência.
+            </h2>
+            <p className="login-hero-subtitle">
+              Da primeira comanda ao último serviço, sua equipe no mesmo ritmo.
+            </p>
+          </div>
+
+          <div className="login-dish-card">
+            <img
+              src={risotoImg}
+              alt="Risoto de cogumelos"
+              className="login-dish-image"
+            />
+            <div className="login-dish-badge">Risoto de cogumelos</div>
+          </div>
         </div>
 
-        <form onSubmit={handleLogin} className="login-form">
-          <div className="form-group">
-            <label htmlFor="email">E-mail</label>
-            <div className="input-wrapper">
-              <Mail size={18} className="input-icon" />
-              <input
-                id="email"
-                type="email"
-                placeholder="admin@padrebueno.com"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                required
-              />
-            </div>
-          </div>
+        <p className="login-left-footer">
+          RESTAURANTE E CANTINA PADRE BUENO / PAINEL DA EQUIPE
+        </p>
+      </aside>
 
-          <div className="form-group">
-            <label htmlFor="senha">Senha</label>
-            <div className="input-wrapper">
-              <Lock size={18} className="input-icon" />
-              <input
-                id="senha"
-                type={mostrarSenha ? 'text' : 'password'}
-                placeholder="••••••••"
-                value={senha}
-                onChange={(e) => setSenha(e.target.value)}
-                required
-              />
-              <button
-                type="button"
-                className="toggle-password"
-                onClick={() => setMostrarSenha(!mostrarSenha)}
-                aria-label="Mostrar ou ocultar senha"
-              >
-                {mostrarSenha ? <EyeOff size={18} /> : <Eye size={18} />}
-              </button>
-            </div>
-          </div>
+      {/* LADO DIREITO - FORMULÁRIO */}
+      <main className="login-right">
+        <div className="login-form-wrapper">
+          <span className="login-eyebrow">BEM-VINDO DE VOLTA</span>
+          <h4 className="login-title">Tudo pronto para o serviço?</h4>
+          <p className="login-subtitle">
+            Entre com sua conta para acessar sua área.
+          </p>
 
-          <button type="submit" className="btn-login">
-            Entrar
-          </button>
-        </form>
-      </div>
-    </div>
+          <form onSubmit={handleSubmit}>
+            <div className="login-field">
+              <label htmlFor="login-email" className="login-label">
+                E-mail
+              </label>
+              <div className="login-input-group">
+                <input
+                  id="login-email"
+                  type="text"
+                  className="login-input"
+                  placeholder="seu.nome@restaurante.com"
+                  value={identificador}
+                  onChange={(e) => setIdentificador(e.target.value)}
+                  required
+                />
+                <span className="login-input-icon" aria-hidden="true">
+                  <svg
+                    width="18"
+                    height="18"
+                    viewBox="0 0 24 24"
+                    fill="currentColor"
+                  >
+                    <path d="M12 12c2.76 0 5-2.24 5-5s-2.24-5-5-5-5 2.24-5 5 2.24 5 5 5zm0 2c-3.33 0-10 1.67-10 5v3h20v-3c0-3.33-6.67-5-10-5z" />
+                  </svg>
+                </span>
+              </div>
+            </div>
+
+            <div className="login-field">
+              <label htmlFor="login-senha" className="login-label">
+                Senha
+              </label>
+              <div className="login-input-group">
+                <input
+                  id="login-senha"
+                  type={mostrarSenha ? "text" : "password"}
+                  className="login-input"
+                  placeholder="••••••••••••"
+                  value={senha}
+                  onChange={(e) => setSenha(e.target.value)}
+                  required
+                />
+                <button
+                  type="button"
+                  className="login-eye-btn"
+                  onClick={() => setMostrarSenha((prev) => !prev)}
+                  aria-label={mostrarSenha ? "Ocultar senha" : "Mostrar senha"}
+                >
+                  {mostrarSenha ? (
+                    <svg
+                      width="18"
+                      height="18"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="2"
+                    >
+                      <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24" />
+                      <line x1="1" y1="1" x2="23" y2="23" />
+                    </svg>
+                  ) : (
+                    <svg
+                      width="18"
+                      height="18"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="2"
+                    >
+                      <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" />
+                      <circle cx="12" cy="12" r="3" />
+                    </svg>
+                  )}
+                </button>
+              </div>
+
+              <div className="login-forgot-row">
+                <button
+                  type="button"
+                  className="login-forgot-link"
+                  onClick={onEsqueceuSenha}
+                >
+                  Esqueceu senha?
+                </button>
+              </div>
+            </div>
+
+            <button type="submit" className="login-submit-btn">
+              <span>Entrar na minha área</span>
+              <span aria-hidden="true">→</span>
+            </button>
+
+            <p className="login-redirect-hint">
+              Você será direcionado automaticamente conforme seu perfil.
+            </p>
+          </form>
+
+          <hr className="login-divider" />
+
+          <p className="login-help-text">
+            Precisa de outro acesso?
+            <br />
+            Converse com um administrador.
+          </p>
+
+          <p className="login-restricted-footer">
+            Acesso exclusivo à equipe autorizada.
+          </p>
+        </div>
+      </main>
     </div>
   );
 }
