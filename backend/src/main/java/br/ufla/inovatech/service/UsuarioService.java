@@ -1,5 +1,8 @@
 package br.ufla.inovatech.service;
 
+import br.ufla.inovatech.dto.UsuarioTokenDTO;
+import br.ufla.inovatech.dto.usuario.AlterarSenhaRequest;
+import br.ufla.inovatech.dto.usuario.AtualizaRequest;
 import br.ufla.inovatech.dto.usuario.AuthRequest;
 import br.ufla.inovatech.dto.usuario.LerResponse;
 import br.ufla.inovatech.dto.usuario.RegisterRequest;
@@ -68,6 +71,50 @@ public class UsuarioService {
         if (usuario == null) return false;
         usuarioRepository.delete(usuario);
         return true;
+    }
+
+    public LerResponse atualizar(Integer id, AtualizaRequest request){
+        Usuario usuario = consultarId(id);
+        if (usuario == null) {
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Usuário não encontrado");
+        }
+        if (usuarioRepository.existsByCpfAndIdNot(request.cpf(), id)) {
+            throw new ResponseStatusException(HttpStatus.CONFLICT, "CPF já vinculado a outro usuário");
+        }
+        if (usuarioRepository.existsByEmailAndIdNot(request.email(), id)) {
+            throw new ResponseStatusException(HttpStatus.CONFLICT, "E-mail já vinculado a outro usuário");
+        }
+
+        usuario.setNome(request.nome());
+        usuario.setEmail(request.email());
+        usuario.setCpf(request.cpf());
+        usuarioRepository.save(usuario);
+
+        return paraResponse(usuario);
+    }
+
+    public void alterarSenha(Integer id, AlterarSenhaRequest request, UsuarioTokenDTO solicitante){
+        Usuario usuario = consultarId(id);
+        if (usuario == null) {
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Usuário não encontrado");
+        }
+
+        boolean ehAdministrador = "ADMINISTRADOR".equals(solicitante.perfil());
+        if (!ehAdministrador) {
+            if (!usuario.getEmail().equals(solicitante.email())) {
+                throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Você só pode alterar a sua própria senha");
+            }
+            if (request.senhaAtual() == null || !passwordEncoder.matches(request.senhaAtual(), usuario.getSenha())) {
+                throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Senha atual incorreta");
+            }
+        }
+
+        if (!request.novaSenha().equals(request.confirmarSenha())) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "A confirmação é diferente da nova senha");
+        }
+
+        usuario.setSenha(passwordEncoder.encode(request.novaSenha()));
+        usuarioRepository.save(usuario);
     }
 
     public HttpStatus validarPermissao(String token){
