@@ -45,9 +45,9 @@ public class UsuarioService {
     }
 
     public String autenticar(@RequestBody LoginRequest request){
-        Usuario usuario = usuarioRepository.findByEmail(request.email());
+        Usuario usuario = usuarioRepository.findByNomeUsuario(request.nomeUsuario());
         if (usuario == null || !passwordEncoder.matches(request.senha(), usuario.getSenha())) {
-            throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Email ou senha inválidos");
+            throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Usuário ou senha inválidos");
         }
         return tokenService.gerarToken(usuario.getEmail(), usuario.getCpf(), usuario.getPerfil());
     }

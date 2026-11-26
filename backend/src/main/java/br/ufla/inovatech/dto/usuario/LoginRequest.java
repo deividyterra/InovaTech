@@ -1,18 +1,17 @@
 package br.ufla.inovatech.dto.usuario;
 
 import br.ufla.inovatech.service.Sanitizer;
-import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
 
+/** Login por Nome de Usuário e senha (RF-001). */
 public record LoginRequest(
         @NotBlank
-        @Email
-        String email,
+        String nomeUsuario,
 
         @NotBlank
         String senha
 ) {
     public LoginRequest{
-        email = Sanitizer.email(email);
+        nomeUsuario = Sanitizer.texto(nomeUsuario);
     }
 }

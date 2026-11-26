@@ -1,5 +1,7 @@
 package br.ufla.inovatech.dto.usuario;
 
+import br.ufla.inovatech.model.Usuario;
+import br.ufla.inovatech.validacao.Unico;
 import br.ufla.inovatech.service.Sanitizer;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
@@ -13,10 +15,12 @@ public record AtualizaRequest(
 
         @NotBlank
         @Email
+        @Unico(entidade = Usuario.class, campo = "email", message = "E-mail já cadastrado")
         String email,
 
         @NotBlank
         @CPF
+        @Unico(entidade = Usuario.class, campo = "cpf", message = "CPF já cadastrado")
         String cpf
 ) {
     public AtualizaRequest {
