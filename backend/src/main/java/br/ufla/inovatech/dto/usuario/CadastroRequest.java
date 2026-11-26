@@ -35,12 +35,18 @@ public record CadastroRequest(
    @NotBlank
    @CPF
    @Unico(entidade = Usuario.class, campo = "cpf", message = "CPF já cadastrado")
-   String cpf
+   String cpf,
 
+   @Pattern(
+           regexp = "^(GARCOM|CHEF_COZINHA|GESTOR_PEDIDOS|CAIXA|ADMINISTRADOR)$",
+           message = "Perfil inválido"
+   )
+   String perfil
 ) {
    public CadastroRequest {
       nome = Sanitizer.texto(nome);
       email = Sanitizer.email(email);
       cpf = Sanitizer.cpf(cpf);
+      perfil = (perfil == null || perfil.isBlank()) ? "GARCOM" : perfil.trim().toUpperCase();
    }
 }

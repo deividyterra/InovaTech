@@ -1,3 +1,4 @@
+import { useNavigate } from "react-router-dom";
 import { useEffect, useMemo, useState } from "react";
 import {
   alterarSenhaUsuario,
@@ -14,8 +15,8 @@ import "./UsuariosPage.css";
 
 const PERFIS = [
   { value: "GARCOM", label: "Garçom", cor: "yellow" },
-  { value: "COZINHEIRO", label: "Cozinheiro", cor: "green" },
-  { value: "GESTOR", label: "Gestor de pedidos", cor: "blue" },
+  { value: "CHEF_COZINHA", label: "Cozinheiro", cor: "green" },
+  { value: "GESTOR_PEDIDOS", label: "Gestor de pedidos", cor: "blue" },
   { value: "CAIXA", label: "Caixa", cor: "purple" },
   { value: "ADMINISTRADOR", label: "Administrador", cor: "red" },
 ];
@@ -28,7 +29,7 @@ const FORM_INICIAL = {
   cpf: "",
   email: "",
   senha: "",
-  perfil: "garcom",
+  perfil: "GARCOM",
 };
 
 const MENU = [
@@ -162,19 +163,26 @@ export default function UsuariosPage() {
     carregarUsuarios();
   }, []);
 
-  const filtrados = useMemo(() => {
-    const termo = busca.trim().toLowerCase();
-    return usuarios.filter((u) => {
-      const bateAba = abaAtiva === "todos" || u.perfil === "admin";
-      const bateBusca =
-        !termo ||
-        u.nome?.toLowerCase().includes(termo) ||
-        u.email?.toLowerCase().includes(termo) ||
-        u.nomeUsuario?.toLowerCase().includes(termo);
-      const batePerfil = filtroPerfil === "todos" || u.perfil === filtroPerfil;
-      return bateAba && bateBusca && batePerfil;
-    });
-  }, [usuarios, abaAtiva, busca, filtroPerfil]);
+const ehAdmin = (u) => {
+  const p = String(u.perfil || "").toUpperCase();
+  return p === "ADMINISTRADOR" || p === "ADMIN";
+};
+
+const filtrados = useMemo(() => {
+  const termo = busca.trim().toLowerCase();
+  return usuarios.filter((u) => {
+    const bateAba = abaAtiva === "todos" || ehAdmin(u);
+    const bateBusca =
+      !termo ||
+      u.nome?.toLowerCase().includes(termo) ||
+      u.email?.toLowerCase().includes(termo) ||
+      u.nomeUsuario?.toLowerCase().includes(termo);
+    const batePerfil =
+      filtroPerfil === "todos" ||
+      String(u.perfil || "").toUpperCase() === filtroPerfil;
+    return bateAba && bateBusca && batePerfil;
+  });
+}, [usuarios, abaAtiva, busca, filtroPerfil]);
 
   const totalPaginas = Math.max(1, Math.ceil(filtrados.length / POR_PAGINA));
   const paginaAtual = Math.min(pagina, totalPaginas);
@@ -182,7 +190,7 @@ export default function UsuariosPage() {
     (paginaAtual - 1) * POR_PAGINA,
     paginaAtual * POR_PAGINA
   );
-  const totalAdmins = usuarios.filter((u) => u.perfil === "admin").length;
+  const totalAdmins = usuarios.filter(ehAdmin).length;
 
   function handleChange(e) {
     const { name, value } = e.target;
@@ -197,9 +205,9 @@ export default function UsuariosPage() {
     }));
   }
 
-  function iniciarNovoAdmin() {
-    setForm({ ...FORM_INICIAL, perfil: "admin" });
-  }
+function iniciarNovoAdmin() {
+  setForm({ ...FORM_INICIAL, perfil: "ADMINISTRADOR" });
+}
 
   function abrirModalUsuario(modo, usuario) {
     setFormEdicao({
@@ -210,7 +218,13 @@ export default function UsuariosPage() {
     });
     setModalUsuario({ modo, usuario });
   }
+const navigate = useNavigate();
 
+function handleLogout(e) {
+  e.preventDefault();
+  localStorage.removeItem("token");
+  navigate("/login");
+}
   async function handleSubmitNovo(e) {
     e.preventDefault();
     if (salvando) return;
@@ -592,10 +606,12 @@ export default function UsuariosPage() {
         </div>
 
         <div className="sidebar__footer">
-          <strong>Restaurante e Cantina Padre Bueno</strong>
-          <span>Administrador</span>
-          <a href="#">Sair da conta</a>
-        </div>
+  <strong>Restaurante e Cantina Padre Bueno</strong>
+  <span>Administrador</span>
+  <a href="/login" onClick={handleLogout}>
+    Sair da conta
+  </a>
+</div>
       </aside>
 
       {/* ===== CONTEÚDO ===== */}
@@ -851,7 +867,7 @@ export default function UsuariosPage() {
                   type="email"
                   name="email"
                   className="input"
-                  placeholder="nome@oliveiras.com"
+                  placeholder="nome@padrebueno.com"
                   value={form.email}
                   onChange={handleChange}
                 />

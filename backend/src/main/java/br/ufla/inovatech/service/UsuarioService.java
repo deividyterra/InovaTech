@@ -30,7 +30,7 @@ public class UsuarioService {
         this.tokenService = tokenService;
     }
 
-    public String cadastrar(@RequestBody CadastroRequest request){
+public String cadastrar(@RequestBody CadastroRequest request){
 
         Usuario usuario = new Usuario();
         usuario.setEmail(request.email());
@@ -38,7 +38,7 @@ public class UsuarioService {
         usuario.setNomeUsuario(request.nomeUsuario());
         usuario.setSenha(passwordEncoder.encode(request.senha()));
         usuario.setCpf(request.cpf());
-        usuario.setPerfil("GARCOM");
+        usuario.setPerfil(request.perfil());
         usuarioRepository.save(usuario);
 
         return tokenService.gerarToken(usuario.getEmail(), usuario.getCpf(), usuario.getPerfil());

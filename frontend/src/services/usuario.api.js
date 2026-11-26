@@ -61,16 +61,17 @@ export async function listarUsuarios() {
   return Array.isArray(lista) ? lista.map(normalizarUsuario) : [];
 }
 
-export async function cadastrarUsuario({ nome, nomeUsuario, email, senha, cpf }) {
+export async function cadastrarUsuario({ nome, nomeUsuario, email, senha, cpf, perfil }) {
   const res = await fetch(`${BASE_URL}/cadastro`, {
     method: "POST",
-    headers: { "Content-Type": "application/json" },
+    headers: getAuthHeaders(),
     body: JSON.stringify({
       nome: nome.trim(),
       nomeUsuario: nomeUsuario.trim(),
       email: email.trim(),
       senha,
       cpf,
+      perfil: (perfil || "GARCOM").toUpperCase(),
     }),
   });
   return tratarResposta(res);

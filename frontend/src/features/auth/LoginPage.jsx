@@ -1,4 +1,6 @@
 import { useRef, useState } from "react";
+import { useNavigate } from "react-router-dom";
+import { loginUsuario } from "../../services/usuario.api";
 import "./LoginPage.css";
 import risotoImg from "../../assets/risoto-cogumelos.png";
 
@@ -27,14 +29,36 @@ function IconEye({ aberto }) {
   );
 }
 
+// Extrai o payload do JWT (ex: perfil, sub, email) sem depender de bibliotecas externas
+function extrairDadosToken(token) {
+  try {
+    const base64Url = token.split(".")[1];
+    if (!base64Url) return {};
+    const base64 = base64Url.replace(/-/g, "+").replace(/_/g, "/");
+    const jsonPayload = decodeURIComponent(
+      atob(base64)
+        .split("")
+        .map((c) => "%" + ("00" + c.charCodeAt(0).toString(16)).slice(-2))
+        .join("")
+    );
+    return JSON.parse(jsonPayload);
+  } catch {
+    return {};
+  }
+}
+
 export default function LoginPage() {
+  const navigate = useNavigate();
+
   // Etapas: "login" | "esqueci-senha" | "codigo" | "nova-senha"
   const [etapa, setEtapa] = useState("login");
   const [erro, setErro] = useState("");
+  const [carregando, setCarregando] = useState(false);
   const [modalSucesso, setModalSucesso] = useState(false);
 
   // Campos de login / recuperação
-  const [identificador, setIdentificador] = useState("");
+  const [nomeUsuario, setNomeUsuario] = useState("");
+  const [emailRecuperacao, setEmailRecuperacao] = useState("");
   const [senha, setSenha] = useState("");
   const [mostrarSenha, setMostrarSenha] = useState(false);
 
@@ -90,18 +114,39 @@ export default function LoginPage() {
   /* ========================
      SUBMISSÕES
   ======================== */
-  const handleSubmitLogin = (e) => {
+  const handleSubmitLogin = async (e) => {
     e.preventDefault();
-    if (identificador.toLowerCase().includes("erro")) {
-      setErro("E-mail ou senha inválidos. Verifique os dados e tente novamente.");
-      return;
-    }
     setErro("");
-    console.log("Login enviado:", { identificador, senha });
+    setCarregando(true);
+
+    try {
+      const data = await loginUsuario({
+        nomeUsuario: nomeUsuario.trim(),
+        senha,
+      });
+
+      const payload = data?.token ? extrairDadosToken(data.token) : {};
+      const perfil = String(payload.perfil || "").toUpperCase();
+
+      if (perfil === "ADMINISTRADOR" || perfil === "ADMIN") {
+        navigate("/usuarios");
+      } else {
+        navigate("/dashboard");
+      }
+    } catch (err) {
+      setErro(
+        err.message && !err.message.startsWith("Erro 40")
+          ? err.message
+          : "Usuário ou senha inválidos. Verifique os dados e tente novamente."
+      );
+    } finally {
+      setCarregando(false);
+    }
   };
 
   const handleSubmitEsqueciSenha = (e) => {
     e.preventDefault();
+    // TODO: conectar quando o endpoint de envio de código OTP for criado no back-end
     setErro("");
     setCodigo(["", "", "", "", "", ""]);
     setEtapa("codigo");
@@ -110,20 +155,27 @@ export default function LoginPage() {
   const handleSubmitCodigo = (e) => {
     e.preventDefault();
     const valorCompleto = codigo.join("");
-    if (valorCompleto.length < 6 || valorCompleto === "000000") {
-      setErro("O código informado é inválido ou expirou.");
+    if (valorCompleto.length < 6) {
+      setErro("Informe os 6 dígitos do código enviado para o seu e-mail.");
       return;
     }
+    // TODO: conectar validação do OTP no back-end
     setErro("");
     setEtapa("nova-senha");
   };
 
   const handleSubmitNovaSenha = (e) => {
     e.preventDefault();
-    if (novaSenha.length < 8 || novaSenha !== confirmarSenha) {
-      setErro("As senhas não coincidem ou não atendem aos requisitos mínimos.");
+    const regexSenhaForte = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[^A-Za-z0-9]).{8,20}$/;
+    if (!regexSenhaForte.test(novaSenha)) {
+      setErro("A senha deve ter 8 a 20 caracteres, com maiúscula, minúscula, número e símbolo.");
       return;
     }
+    if (novaSenha !== confirmarSenha) {
+      setErro("As senhas não coincidem. Verifique os dois campos.");
+      return;
+    }
+    // TODO: conectar redefinição de senha via token/código no back-end
     setErro("");
     setModalSucesso(true);
   };
@@ -191,20 +243,21 @@ export default function LoginPage() {
 
               <form onSubmit={handleSubmitLogin}>
                 <div className="login-field">
-                  <label htmlFor="login-email" className="login-label">
-                    E-mail
+                  <label htmlFor="login-usuario" className="login-label">
+                    Nome de usuário
                   </label>
                   <div className="login-input-group">
                     <input
-                      id="login-email"
+                      id="login-usuario"
                       type="text"
                       className={`login-input ${erro ? "login-input--error" : ""}`}
-                      placeholder="seu.nome@restaurante.com"
-                      value={identificador}
+                      placeholder="seu.usuario"
+                      value={nomeUsuario}
                       onChange={(e) => {
-                        setIdentificador(e.target.value);
+                        setNomeUsuario(e.target.value);
                         if (erro) setErro("");
                       }}
+                      disabled={carregando}
                       required
                     />
                     <span className="login-input-icon" aria-hidden="true">
@@ -228,6 +281,7 @@ export default function LoginPage() {
                         setSenha(e.target.value);
                         if (erro) setErro("");
                       }}
+                      disabled={carregando}
                       required
                     />
                     <button
@@ -251,9 +305,13 @@ export default function LoginPage() {
                   </div>
                 </div>
 
-                <button type="submit" className="login-submit-btn">
-                  <span>Entrar na minha área</span>
-                  <span aria-hidden="true">→</span>
+                <button
+                  type="submit"
+                  className="login-submit-btn"
+                  disabled={carregando}
+                >
+                  <span>{carregando ? "Entrando..." : "Entrar na minha área"}</span>
+                  {!carregando && <span aria-hidden="true">→</span>}
                 </button>
 
                 <p className="login-redirect-hint">
@@ -284,8 +342,8 @@ export default function LoginPage() {
                       type="email"
                       className="login-input"
                       placeholder="seu.nome@restaurante.com"
-                      value={identificador}
-                      onChange={(e) => setIdentificador(e.target.value)}
+                      value={emailRecuperacao}
+                      onChange={(e) => setEmailRecuperacao(e.target.value)}
                       required
                     />
                     <span className="login-input-icon" aria-hidden="true">
